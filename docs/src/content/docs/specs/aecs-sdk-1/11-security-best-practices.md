@@ -4,7 +4,7 @@ title: "11. Security & Best Practices"
 
 
 > See also [AECS-1 §7 (Security Considerations)](./AECS-1-ai-email-consumption.md#7-security-considerations),
-> which this section's practices build on. In particular, AECS-1 §7 notes that
+> which this section's practices build on. In particular, AECS-1 [§7](/aecs/specs/aecs-1/09-security-considerations/) notes that
 > `content.html` is live, attacker-influenced markup — not just an LLM-injection
 > vector — and carries an SSRF and email tracking-pixel risk for any consumer that
 > renders it directly or eagerly fetches URLs found in it; and that `content.forAI`
@@ -63,7 +63,7 @@ await compose.reply(email, ai, {
 
 ### 11.6 Bound Attachment Processor Resource Usage
 
-Attachments are attacker-controlled input, and the processors in §9.4 (`pdfToText`, `ocr`,
+Attachments are attacker-controlled input, and the processors in [§9.4](/aecs/specs/aecs-sdk-1/09-attachment-handling/#94-ai-powered-attachment-processors) (`pdfToText`, `ocr`,
 `transcribe`) run real decompression and inference work over them — a malicious sender can
 attach a small file that's expensive to process (e.g. a PDF with thousands of pages, a
 zip/decompression bomb disguised with an image/PDF content type, or an oversized audio file)
@@ -80,6 +80,6 @@ onAttachment: async (att, ctx) => {
 
 The built-in processors (`pdfToText`, `ocr`, `transcribe`) do not themselves impose a page,
 duration, or decompressed-size limit — that bound is the caller's responsibility, the same
-way `forAIMaxChars` (§11.3) bounds LLM context rather than the parser silently capping it.
+way `forAIMaxChars` ([§11.3](/aecs/specs/aecs-sdk-1/11-security-best-practices/#113-bound-output-size)) bounds LLM context rather than the parser silently capping it.
 
 ---

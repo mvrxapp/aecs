@@ -142,7 +142,7 @@ The reference `hubRouter()`/`UserHub` is **fire-and-forget, at-most-once, no rep
   established — nothing published during the gap.
 - This is a deliberate simplicity tradeoff, not an oversight: `MailEvent`s are notifications
   that something changed, not the source of truth for that change. The source of truth is
-  D1 (`getThread`/`getMessage`/`listMessages`, §3.8). Clients MUST reconcile on connect and
+  D1 (`getThread`/`getMessage`/`listMessages`, [§3.8](/aecs/specs/aecs-sdk-1/03-core-api/#38-query-api)). Clients MUST reconcile on connect and
   reconnect by querying D1 directly (e.g. `listMessages` since your last known message) —
   never rely on the event stream alone for correctness, only for low-latency "something
   changed, go refetch" signaling.

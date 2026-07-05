@@ -18,11 +18,11 @@
 > (including the basic `onAttachment` callback).
 >
 > **Roadmap — specified in this document but not yet implemented:** D1 storage
-> (`d1Init`/`d1Store`/query API, §3.7–3.8), `EmailTransport` implementations and
-> `sendEmail()` (§3.5–3.6), AI provider connectors (§6), deterministic and
-> AI-powered analysis tools (§7), AI compose (§8), attachment processors and the
-> attachment-to-LLM aggregation helpers (§9.3–9.8), the rules engine (§15), the
-> real-time `UserHub`/SSE hub (§16), and EAS/MCP/hosted-service surfaces. These
+> (`d1Init`/`d1Store`/query API, [§3.7](/aecs/specs/aecs-sdk-1/03-core-api/#37-storage--d1init--d1store)–[3.8](/aecs/specs/aecs-sdk-1/03-core-api/#38-query-api)), `EmailTransport` implementations and
+> `sendEmail()` ([§3.5](/aecs/specs/aecs-sdk-1/03-core-api/#35-emailtransport)–[3.6](/aecs/specs/aecs-sdk-1/03-core-api/#36-sendemailmessage-transport)), AI provider connectors ([§6](/aecs/specs/aecs-sdk-1/06-ai-provider-interface/)), deterministic and
+> AI-powered analysis tools ([§7](/aecs/specs/aecs-sdk-1/07-ai-tools-analysis/)), AI compose ([§8](/aecs/specs/aecs-sdk-1/08-ai-compose-writing-surfaces/)), attachment processors and the
+> attachment-to-LLM aggregation helpers ([§9.3](/aecs/specs/aecs-sdk-1/09-attachment-handling/#93-built-in-cf-processor--store-to-r2)–[9.8](/aecs/specs/aecs-sdk-1/09-attachment-handling/#98-async-extraction-large-files-via-queue)), the rules engine ([§15](/aecs/specs/aecs-sdk-1/15-rules-engine/)), the
+> real-time `UserHub`/SSE hub ([§16](/aecs/specs/aecs-sdk-1/16-real-time-events-userhub/)), and EAS/MCP/hosted-service surfaces. These
 > MUST be implemented through the public SDK surface described here rather than
 > bypassed in commercial code once built. Sections below that specify a roadmap
 > module carry a `Status: Roadmap` banner.
@@ -226,15 +226,15 @@ interface Attachment {
 }
 ```
 
-`Attachment` is a TypeScript runtime type, not identical to AECS-1 §4.5's JSON `attachments[]`
+`Attachment` is a TypeScript runtime type, not identical to AECS-1 [§4.5](/aecs/specs/aecs-1/06-field-definitions/#45-attachments)'s JSON `attachments[]`
 element — it's a superset for SDK ergonomics. When a `NormalizedEmail` is serialized to the
 AECS-1 JSON wire form (stored, sent over the network, hashed, etc.), only the fields AECS-1
-§4.5 defines are part of that form: `id` (promoted into AECS-1 §4.5 as an optional field —
+[§4.5](/aecs/specs/aecs-1/06-field-definitions/#45-attachments) defines are part of that form: `id` (promoted into AECS-1 [§4.5](/aecs/specs/aecs-1/06-field-definitions/#45-attachments) as an optional field —
 see below), `filename`, `contentType`, `size`, `cid`. `content()` (a function — never
 JSON-serializable), `blobKey` (meaningful only relative to whichever `BlobStore` you
-configured), and `extractedText` (an SDK attachment-processing feature, §9) are SDK-runtime
+configured), and `extractedText` (an SDK attachment-processing feature, [§9](/aecs/specs/aecs-sdk-1/09-attachment-handling/)) are SDK-runtime
 fields that exist on the TypeScript object but are not part of the AECS-1 core schema. This
-keeps `Attachment.id` compliant with AECS-1 §9's extensibility rule (custom fields MUST be
+keeps `Attachment.id` compliant with AECS-1 [§9](/aecs/specs/aecs-1/11-extensibility/)'s extensibility rule (custom fields MUST be
 `x_`-namespaced) without requiring `x_` prefixes on fields that are broadly useful enough to
 belong in the core spec, while fields that are genuinely SDK/backend-specific stay out of the
 wire format instead of being smuggled in unprefixed.
@@ -388,11 +388,11 @@ function d1Store(db: D1Database, email: NormalizedEmail): Promise<void>
 This schema round-trips every AECS-1 field losslessly except `content.rawFull`, which is
 referenced via `raw_key` (an R2 pointer) rather than duplicated inline — consistent with
 `rawFull` being the large, archival-fidelity copy. `thread.position` deliberately has **no**
-column: per §5.2, position is a property of a *query result* (computed by sorting a thread),
+column: per [§5.2](/aecs/specs/aecs-sdk-1/05-threading/#52-position), position is a property of a *query result* (computed by sorting a thread),
 not of a stored row, so persisting a static value for it would go stale the moment an
 earlier-timestamped message arrives later. `getThread()` computes it at read time instead.
 
-`timestamp` is `NOT NULL` even though `metadata.timestamp` is nullable (AECS-1 §6, when the
+`timestamp` is `NOT NULL` even though `metadata.timestamp` is nullable (AECS-1 [§6](/aecs/specs/aecs-1/08-timestamps/), when the
 `Date` header is absent/unparseable) — `d1Store()` falls back to `processing.processedAt`
 (converted to epoch seconds) for this column only, so thread/inbox ordering and the indexes
 below stay meaningful. `getThread()`/`getMessage()`/`listMessages()` still return the true
@@ -483,10 +483,10 @@ interface MessagePage {
 }
 ```
 
-All three functions return objects reconstructed from the §3.7 schema — every AECS-1 field
+All three functions return objects reconstructed from the [§3.7](/aecs/specs/aecs-sdk-1/03-core-api/#37-storage--d1init--d1store) schema — every AECS-1 field
 is populated except `content.rawFull` (fetch separately via `raw_key` from your `BlobStore`
 if you need it). `thread.position` specifically: `getThread()` populates it (it has every
-message in the thread, per §5.2); `getMessage()` and `listMessages()` always return
+message in the thread, per [§5.2](/aecs/specs/aecs-sdk-1/05-threading/#52-position)); `getMessage()` and `listMessages()` always return
 `thread.position: null`, because a single-row lookup or an arbitrary page of messages from
 different threads doesn't have each message's siblings available to compute it against.
 
@@ -541,22 +541,22 @@ const email = await parse(message, {
 4. No valid Message-ID     → SHA-256(from + ":" + subject_lower_NFC + ":" + date_utc), UTF-8 encoded
 ```
 
-Angle brackets stripped. Whitespace trimmed. "Valid" has a precise definition (AECS-1 §5.1)
+Angle brackets stripped. Whitespace trimmed. "Valid" has a precise definition (AECS-1 [§5.1](/aecs/specs/aecs-1/07-threading-algorithm/#51-validity-of-a-message-id))
 — not every list entry counts, and validity gates whether rule 4 fires at all. Result is
 always stable regardless of processing order.
 
 ### 5.2 Position
 
-`thread.position` is `number | null` (AECS-1 §4.4) — it can't be computed from one message
+`thread.position` is `number | null` (AECS-1 [§4.4](/aecs/specs/aecs-1/06-field-definitions/#44-thread)) — it can't be computed from one message
 in isolation, so:
 
 - `parse()` always sets `thread.position` to `null` — a single incoming message has no view
   of the rest of its thread.
-- `getMessage()` (single-row lookup, §3.8) also returns `thread.position: null` for the same
+- `getMessage()` (single-row lookup, [§3.8](/aecs/specs/aecs-sdk-1/03-core-api/#38-query-api)) also returns `thread.position: null` for the same
   reason — it doesn't load sibling messages.
 - `getThread()` and `EmailThread.from()` are the only two operations that populate it,
   because both have the full set of messages in a thread available. Both compute it
-  identically: sort ascending by `metadata.timestamp` (not receipt order — see AECS-1 §4.4),
+  identically: sort ascending by `metadata.timestamp` (not receipt order — see AECS-1 [§4.4](/aecs/specs/aecs-1/06-field-definitions/#44-thread)),
   then assign `position = 0, 1, 2, ...` by that sorted order.
 
 ```typescript
@@ -938,7 +938,7 @@ const email = await parse(message, {
 
 ### 9.3 Built-in CF Processor — Store to R2
 
-> **Status: Roadmap.** This section specifies a planned module; it is not yet implemented in `@mvrx/mail`. (Sections 9.1–9.2 above — lazy `content()` loading and the `onAttachment` callback — are implemented today; 9.3–9.8 below describe the planned attachment-processor pipeline.)
+> **Status: Roadmap.** This section specifies a planned module; it is not yet implemented in `@mvrx/mail`. (Sections [9.1](/aecs/specs/aecs-sdk-1/09-attachment-handling/#91-lazy-content-loading)–[9.2](/aecs/specs/aecs-sdk-1/09-attachment-handling/#92-attachmenthandler) above — lazy `content()` loading and the `onAttachment` callback — are implemented today; [9.3](/aecs/specs/aecs-sdk-1/09-attachment-handling/#93-built-in-cf-processor--store-to-r2)–[9.8](/aecs/specs/aecs-sdk-1/09-attachment-handling/#98-async-extraction-large-files-via-queue) below describe the planned attachment-processor pipeline.)
 
 ```typescript
 import { processors } from "@mvrx/mail/attachments";
@@ -1246,7 +1246,7 @@ const prompt = thread.forAI({
 ## 11. Security & Best Practices
 
 > See also [AECS-1 §7 (Security Considerations)](./AECS-1-ai-email-consumption.md#7-security-considerations),
-> which this section's practices build on. In particular, AECS-1 §7 notes that
+> which this section's practices build on. In particular, AECS-1 [§7](/aecs/specs/aecs-1/09-security-considerations/) notes that
 > `content.html` is live, attacker-influenced markup — not just an LLM-injection
 > vector — and carries an SSRF and email tracking-pixel risk for any consumer that
 > renders it directly or eagerly fetches URLs found in it; and that `content.forAI`
@@ -1305,7 +1305,7 @@ await compose.reply(email, ai, {
 
 ### 11.6 Bound Attachment Processor Resource Usage
 
-Attachments are attacker-controlled input, and the processors in §9.4 (`pdfToText`, `ocr`,
+Attachments are attacker-controlled input, and the processors in [§9.4](/aecs/specs/aecs-sdk-1/09-attachment-handling/#94-ai-powered-attachment-processors) (`pdfToText`, `ocr`,
 `transcribe`) run real decompression and inference work over them — a malicious sender can
 attach a small file that's expensive to process (e.g. a PDF with thousands of pages, a
 zip/decompression bomb disguised with an image/PDF content type, or an oversized audio file)
@@ -1322,7 +1322,7 @@ onAttachment: async (att, ctx) => {
 
 The built-in processors (`pdfToText`, `ocr`, `transcribe`) do not themselves impose a page,
 duration, or decompressed-size limit — that bound is the caller's responsibility, the same
-way `forAIMaxChars` (§11.3) bounds LLM context rather than the parser silently capping it.
+way `forAIMaxChars` ([§11.3](/aecs/specs/aecs-sdk-1/11-security-best-practices/#113-bound-output-size)) bounds LLM context rather than the parser silently capping it.
 
 ---
 
@@ -1337,9 +1337,9 @@ way `forAIMaxChars` (§11.3) bounds LLM context rather than the parser silently 
 | `cleaner` | `fn` | built-in | Custom quote/signature stripper |
 | `wrapper` | `ForAIWrapper` | none | Delimiter wrapper for `forAI` |
 | `onAttachment` | `fn` | none | Callback per attachment during parse |
-| `attachmentsInForAI` | `boolean` | `false` | Append `att.extractedText` to `content.forAI` *(roadmap — attachment processors, §9.3–9.8; not in the current `ParseOptions` type)* |
-| `attachmentsForAIOptions` | `AttachmentsForAIOptions` | defaults | Controls per-attachment limits and wrapping *(roadmap — attachment processors, §9.3–9.8; not in the current `ParseOptions` type)* |
-| `threadIdResolver` | `fn` | AECS-1 §5 | Custom `threadId` calculation |
+| `attachmentsInForAI` | `boolean` | `false` | Append `att.extractedText` to `content.forAI` *(roadmap — attachment processors, [§9.3](/aecs/specs/aecs-sdk-1/09-attachment-handling/#93-built-in-cf-processor--store-to-r2)–[9.8](/aecs/specs/aecs-sdk-1/09-attachment-handling/#98-async-extraction-large-files-via-queue); not in the current `ParseOptions` type)* |
+| `attachmentsForAIOptions` | `AttachmentsForAIOptions` | defaults | Controls per-attachment limits and wrapping *(roadmap — attachment processors, [§9.3](/aecs/specs/aecs-sdk-1/09-attachment-handling/#93-built-in-cf-processor--store-to-r2)–[9.8](/aecs/specs/aecs-sdk-1/09-attachment-handling/#98-async-extraction-large-files-via-queue); not in the current `ParseOptions` type)* |
+| `threadIdResolver` | `fn` | AECS-1 [§5](/aecs/specs/aecs-1/07-threading-algorithm/) | Custom `threadId` calculation |
 | `specVersion` | `string` | SDK default | Stamp in `processing.specVersion` |
 
 ### 12.2 `ThreadForAIOptions`
@@ -1573,8 +1573,8 @@ const subjects = await compose.suggestSubjects(short, composeAi, { count: 3 });
 ## 14. Extensibility
 
 > **Note:** the extension points below (`createTools`, custom processors, custom
-> providers) belong to roadmap modules (§6–§9). The implemented core's extension
-> points are `ParseOptions.cleaner`, `wrapper`, `onAttachment`, and `threadIdResolver` (§12.1).
+> providers) belong to roadmap modules ([§6](/aecs/specs/aecs-sdk-1/06-ai-provider-interface/)–[§9](/aecs/specs/aecs-sdk-1/09-attachment-handling/)). The implemented core's extension
+> points are `ParseOptions.cleaner`, `wrapper`, `onAttachment`, and `threadIdResolver` ([§12.1](/aecs/specs/aecs-sdk-1/12-configuration-reference/#121-parseoptions)).
 
 ### 14.1 Custom AI Tools
 
@@ -1629,7 +1629,7 @@ const email = await parse(message) as AppEmail;
 email.x_ticket_id = myTools.extractTicketId(email)?.ticketId ?? null;
 ```
 
-Custom fields must use the `x_` prefix per AECS-1 §9.
+Custom fields must use the `x_` prefix per AECS-1 [§9](/aecs/specs/aecs-1/11-extensibility/).
 
 ---
 
@@ -1888,7 +1888,7 @@ The reference `hubRouter()`/`UserHub` is **fire-and-forget, at-most-once, no rep
   established — nothing published during the gap.
 - This is a deliberate simplicity tradeoff, not an oversight: `MailEvent`s are notifications
   that something changed, not the source of truth for that change. The source of truth is
-  D1 (`getThread`/`getMessage`/`listMessages`, §3.8). Clients MUST reconcile on connect and
+  D1 (`getThread`/`getMessage`/`listMessages`, [§3.8](/aecs/specs/aecs-sdk-1/03-core-api/#38-query-api)). Clients MUST reconcile on connect and
   reconnect by querying D1 directly (e.g. `listMessages` since your last known message) —
   never rely on the event stream alone for correctness, only for low-latency "something
   changed, go refetch" signaling.
@@ -1974,5 +1974,5 @@ The spec version implemented is declared in `package.json`:
 
 | Version | Date | Notes |
 |---|---|---|
-| 0.3.0-draft | 2026-07-03 | Synced to [AECS-1 v1.0.0 (Final, 2026-07-03)](./AECS-1-ai-email-consumption.md). Added the Implementation Status note (near the top of this document) and `Status: Roadmap` banners on every section that specifies a module not yet implemented in `@mvrx/mail`, roadmap annotations on the §2.2 setup bindings and §13–§14 examples/extensibility, plus a §11 cross-reference to AECS-1 §7's security guidance. No normative algorithm text changed. |
+| 0.3.0-draft | 2026-07-03 | Synced to [AECS-1 v1.0.0 (Final, 2026-07-03)](./AECS-1-ai-email-consumption.md). Added the Implementation Status note (near the top of this document) and `Status: Roadmap` banners on every section that specifies a module not yet implemented in `@mvrx/mail`, roadmap annotations on the [§2.2](/aecs/specs/aecs-sdk-1/02-installation-setup/#22-cloudflare-workers--full-setup) setup bindings and [§13](/aecs/specs/aecs-sdk-1/13-examples/)–[§14](/aecs/specs/aecs-sdk-1/14-extensibility/) examples/extensibility, plus a [§11](/aecs/specs/aecs-sdk-1/11-security-best-practices/) cross-reference to AECS-1 [§7](/aecs/specs/aecs-1/09-security-considerations/)'s security guidance. No normative algorithm text changed. |
 | 0.2.0-draft | 2026-06-29 | Prior draft, written before AECS-1 was finalized. |

@@ -44,6 +44,6 @@ This example shows a reply message. Note how the content levels diverge as proce
 `thread.position` is `1` here because this example represents the message as it appears
 *after* thread reconciliation (this is the second of two messages, following the root shown
 in `references`). A single, isolated `parse()` of this message with no knowledge of the rest
-of the thread would instead produce `thread.position: null` per §4.4.
+of the thread would instead produce `thread.position: null` per [§4.4](/aecs/specs/aecs-1/06-field-definitions/#44-thread).
 
 ---

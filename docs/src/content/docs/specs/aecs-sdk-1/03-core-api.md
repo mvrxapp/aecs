@@ -81,15 +81,15 @@ interface Attachment {
 }
 ```
 
-`Attachment` is a TypeScript runtime type, not identical to AECS-1 §4.5's JSON `attachments[]`
+`Attachment` is a TypeScript runtime type, not identical to AECS-1 [§4.5](/aecs/specs/aecs-1/06-field-definitions/#45-attachments)'s JSON `attachments[]`
 element — it's a superset for SDK ergonomics. When a `NormalizedEmail` is serialized to the
 AECS-1 JSON wire form (stored, sent over the network, hashed, etc.), only the fields AECS-1
-§4.5 defines are part of that form: `id` (promoted into AECS-1 §4.5 as an optional field —
+[§4.5](/aecs/specs/aecs-1/06-field-definitions/#45-attachments) defines are part of that form: `id` (promoted into AECS-1 [§4.5](/aecs/specs/aecs-1/06-field-definitions/#45-attachments) as an optional field —
 see below), `filename`, `contentType`, `size`, `cid`. `content()` (a function — never
 JSON-serializable), `blobKey` (meaningful only relative to whichever `BlobStore` you
-configured), and `extractedText` (an SDK attachment-processing feature, §9) are SDK-runtime
+configured), and `extractedText` (an SDK attachment-processing feature, [§9](/aecs/specs/aecs-sdk-1/09-attachment-handling/)) are SDK-runtime
 fields that exist on the TypeScript object but are not part of the AECS-1 core schema. This
-keeps `Attachment.id` compliant with AECS-1 §9's extensibility rule (custom fields MUST be
+keeps `Attachment.id` compliant with AECS-1 [§9](/aecs/specs/aecs-1/11-extensibility/)'s extensibility rule (custom fields MUST be
 `x_`-namespaced) without requiring `x_` prefixes on fields that are broadly useful enough to
 belong in the core spec, while fields that are genuinely SDK/backend-specific stay out of the
 wire format instead of being smuggled in unprefixed.
@@ -243,11 +243,11 @@ function d1Store(db: D1Database, email: NormalizedEmail): Promise<void>
 This schema round-trips every AECS-1 field losslessly except `content.rawFull`, which is
 referenced via `raw_key` (an R2 pointer) rather than duplicated inline — consistent with
 `rawFull` being the large, archival-fidelity copy. `thread.position` deliberately has **no**
-column: per §5.2, position is a property of a *query result* (computed by sorting a thread),
+column: per [§5.2](/aecs/specs/aecs-sdk-1/05-threading/#52-position), position is a property of a *query result* (computed by sorting a thread),
 not of a stored row, so persisting a static value for it would go stale the moment an
 earlier-timestamped message arrives later. `getThread()` computes it at read time instead.
 
-`timestamp` is `NOT NULL` even though `metadata.timestamp` is nullable (AECS-1 §6, when the
+`timestamp` is `NOT NULL` even though `metadata.timestamp` is nullable (AECS-1 [§6](/aecs/specs/aecs-1/08-timestamps/), when the
 `Date` header is absent/unparseable) — `d1Store()` falls back to `processing.processedAt`
 (converted to epoch seconds) for this column only, so thread/inbox ordering and the indexes
 below stay meaningful. `getThread()`/`getMessage()`/`listMessages()` still return the true
@@ -338,10 +338,10 @@ interface MessagePage {
 }
 ```
 
-All three functions return objects reconstructed from the §3.7 schema — every AECS-1 field
+All three functions return objects reconstructed from the [§3.7](/aecs/specs/aecs-sdk-1/03-core-api/#37-storage--d1init--d1store) schema — every AECS-1 field
 is populated except `content.rawFull` (fetch separately via `raw_key` from your `BlobStore`
 if you need it). `thread.position` specifically: `getThread()` populates it (it has every
-message in the thread, per §5.2); `getMessage()` and `listMessages()` always return
+message in the thread, per [§5.2](/aecs/specs/aecs-sdk-1/05-threading/#52-position)); `getMessage()` and `listMessages()` always return
 `thread.position: null`, because a single-row lookup or an arbitrary page of messages from
 different threads doesn't have each message's siblings available to compute it against.
 

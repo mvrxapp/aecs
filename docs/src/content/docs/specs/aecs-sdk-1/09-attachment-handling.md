@@ -46,7 +46,7 @@ const email = await parse(message, {
 
 ### 9.3 Built-in CF Processor — Store to R2
 
-> **Status: Roadmap.** This section specifies a planned module; it is not yet implemented in `@mvrx/mail`. (Sections 9.1–9.2 above — lazy `content()` loading and the `onAttachment` callback — are implemented today; 9.3–9.8 below describe the planned attachment-processor pipeline.)
+> **Status: Roadmap.** This section specifies a planned module; it is not yet implemented in `@mvrx/mail`. (Sections [9.1](/aecs/specs/aecs-sdk-1/09-attachment-handling/#91-lazy-content-loading)–[9.2](/aecs/specs/aecs-sdk-1/09-attachment-handling/#92-attachmenthandler) above — lazy `content()` loading and the `onAttachment` callback — are implemented today; [9.3](/aecs/specs/aecs-sdk-1/09-attachment-handling/#93-built-in-cf-processor--store-to-r2)–[9.8](/aecs/specs/aecs-sdk-1/09-attachment-handling/#98-async-extraction-large-files-via-queue) below describe the planned attachment-processor pipeline.)
 
 ```typescript
 import { processors } from "@mvrx/mail/attachments";

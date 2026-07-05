@@ -7,8 +7,8 @@ title: "4. Field Definitions"
 
 | Field | Type | Required | Description |
 |---|---|---|---|
-| `messageId` | string | **Yes** | The value of the `Message-ID` header, normalized (angle brackets stripped). When the header is absent or invalid (§5.1), implementations MUST assign a synthetic ID per §4.1.1. Unique per message. |
-| `threadId` | string | **Yes** | Stable conversation identifier. Calculated deterministically — see Section 5. |
+| `messageId` | string | **Yes** | The value of the `Message-ID` header, normalized (angle brackets stripped). When the header is absent or invalid ([§5.1](/aecs/specs/aecs-1/07-threading-algorithm/#51-validity-of-a-message-id)), implementations MUST assign a synthetic ID per [§4.1.1](/aecs/specs/aecs-1/06-field-definitions/#411-synthetic-messageid). Unique per message. |
+| `threadId` | string | **Yes** | Stable conversation identifier. Calculated deterministically — see [Section 5](/aecs/specs/aecs-1/07-threading-algorithm/). |
 | `metadata` | object | No | Parsed header fields. |
 | `content` | object | No | Message body at multiple processing levels. |
 | `thread` | object | No | Threading position and header chain. |
@@ -17,7 +17,7 @@ title: "4. Field Definitions"
 
 #### 4.1.1 Synthetic `messageId`
 
-When the `Message-ID` header is absent or not valid (§5.1), implementations MUST still
+When the `Message-ID` header is absent or not valid ([§5.1](/aecs/specs/aecs-1/07-threading-algorithm/#51-validity-of-a-message-id)), implementations MUST still
 produce a non-null `messageId`. It MUST be deterministic: the same source message MUST
 always yield the same ID.
 
@@ -46,8 +46,8 @@ present.
 | `metadata.cc` | Address[] | Parsed `CC` header recipients. |
 | `metadata.bcc` | Address[] | Parsed `BCC` header. Typically absent from received messages. |
 | `metadata.subject` | string \| null | Decoded `Subject` header value. |
-| `metadata.date` | string \| null | `Date` header value normalized to ISO 8601 UTC. `null` if the header is absent or unparseable — see §6. |
-| `metadata.timestamp` | number \| null | Unix epoch (seconds, UTC). Parsed from `metadata.date`; `null` under the same conditions as `metadata.date` — see §6. |
+| `metadata.date` | string \| null | `Date` header value normalized to ISO 8601 UTC. `null` if the header is absent or unparseable — see [§6](/aecs/specs/aecs-1/08-timestamps/). |
+| `metadata.timestamp` | number \| null | Unix epoch (seconds, UTC). Parsed from `metadata.date`; `null` under the same conditions as `metadata.date` — see [§6](/aecs/specs/aecs-1/08-timestamps/). |
 
 **Address object:**
 ```json
@@ -91,9 +91,9 @@ Consumers preferring minimal context window usage should use `content.forAI`. Co
 - The ordering key is `metadata.timestamp` (i.e. the sender-supplied `Date` header),
   **not** the order in which an implementation received or processed each message.
   These are different orderings whenever mail is delayed, backdated, or a sender's clock is
-  skewed — and per §7, `Date` is sender-controlled, untrusted input. Implementations that
+  skewed — and per [§7](/aecs/specs/aecs-1/09-security-considerations/), `Date` is sender-controlled, untrusted input. Implementations that
   need true receipt/processing order for robustness against clock skew or spoofing SHOULD
-  use `processing.processedAt` (§4.6) for that purpose instead of `thread.position`.
+  use `processing.processedAt` ([§4.6](/aecs/specs/aecs-1/06-field-definitions/#46-processing)) for that purpose instead of `thread.position`.
 - Ties (two messages with identical `metadata.timestamp`) MAY be broken by `messageId`
   string comparison for a stable, deterministic sort; this spec does not mandate a specific
   tiebreak beyond requiring one to exist so position assignment is reproducible.

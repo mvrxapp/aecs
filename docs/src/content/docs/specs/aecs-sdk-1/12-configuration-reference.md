@@ -12,9 +12,9 @@ title: "12. Configuration Reference"
 | `cleaner` | `fn` | built-in | Custom quote/signature stripper |
 | `wrapper` | `ForAIWrapper` | none | Delimiter wrapper for `forAI` |
 | `onAttachment` | `fn` | none | Callback per attachment during parse |
-| `attachmentsInForAI` | `boolean` | `false` | Append `att.extractedText` to `content.forAI` *(roadmap — attachment processors, §9.3–9.8; not in the current `ParseOptions` type)* |
-| `attachmentsForAIOptions` | `AttachmentsForAIOptions` | defaults | Controls per-attachment limits and wrapping *(roadmap — attachment processors, §9.3–9.8; not in the current `ParseOptions` type)* |
-| `threadIdResolver` | `fn` | AECS-1 §5 | Custom `threadId` calculation |
+| `attachmentsInForAI` | `boolean` | `false` | Append `att.extractedText` to `content.forAI` *(roadmap — attachment processors, [§9.3](/aecs/specs/aecs-sdk-1/09-attachment-handling/#93-built-in-cf-processor--store-to-r2)–[9.8](/aecs/specs/aecs-sdk-1/09-attachment-handling/#98-async-extraction-large-files-via-queue); not in the current `ParseOptions` type)* |
+| `attachmentsForAIOptions` | `AttachmentsForAIOptions` | defaults | Controls per-attachment limits and wrapping *(roadmap — attachment processors, [§9.3](/aecs/specs/aecs-sdk-1/09-attachment-handling/#93-built-in-cf-processor--store-to-r2)–[9.8](/aecs/specs/aecs-sdk-1/09-attachment-handling/#98-async-extraction-large-files-via-queue); not in the current `ParseOptions` type)* |
+| `threadIdResolver` | `fn` | AECS-1 [§5](/aecs/specs/aecs-1/07-threading-algorithm/) | Custom `threadId` calculation |
 | `specVersion` | `string` | SDK default | Stamp in `processing.specVersion` |
 
 ### 12.2 `ThreadForAIOptions`

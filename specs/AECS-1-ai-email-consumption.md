@@ -65,7 +65,7 @@ choice for sync — AECS-1 is complementary, not a competitor, at the normalizat
 
 ## 2. Core Principles
 
-- **Flexible by design.** All fields except `messageId` and `threadId` are optional. Implementations populate what they can; unpopulated fields SHOULD be explicit `null` (consumers MUST accept omission too — §10).
+- **Flexible by design.** All fields except `messageId` and `threadId` are optional. Implementations populate what they can; unpopulated fields SHOULD be explicit `null` (consumers MUST accept omission too — [§10](/aecs/specs/aecs-1/12-conformance/)).
 - **Non-destructive.** The original raw message is preserved as an atomic field when included. Normalization layers are additions, not replacements.
 - **Multiple content levels.** Consumers choose the level of processing that suits their use case — from raw RFC 5322 bytes to a clean, LLM-ready string.
 - **Stable threading.** `threadId` is calculated deterministically from standard email headers. It must be identical for all messages in the same conversation, across implementations.
@@ -130,8 +130,8 @@ choice for sync — AECS-1 is complementary, not a competitor, at the normalizat
 
 | Field | Type | Required | Description |
 |---|---|---|---|
-| `messageId` | string | **Yes** | The value of the `Message-ID` header, normalized (angle brackets stripped). When the header is absent or invalid (§5.1), implementations MUST assign a synthetic ID per §4.1.1. Unique per message. |
-| `threadId` | string | **Yes** | Stable conversation identifier. Calculated deterministically — see Section 5. |
+| `messageId` | string | **Yes** | The value of the `Message-ID` header, normalized (angle brackets stripped). When the header is absent or invalid ([§5.1](/aecs/specs/aecs-1/07-threading-algorithm/#51-validity-of-a-message-id)), implementations MUST assign a synthetic ID per [§4.1.1](/aecs/specs/aecs-1/06-field-definitions/#411-synthetic-messageid). Unique per message. |
+| `threadId` | string | **Yes** | Stable conversation identifier. Calculated deterministically — see [Section 5](/aecs/specs/aecs-1/07-threading-algorithm/). |
 | `metadata` | object | No | Parsed header fields. |
 | `content` | object | No | Message body at multiple processing levels. |
 | `thread` | object | No | Threading position and header chain. |
@@ -140,7 +140,7 @@ choice for sync — AECS-1 is complementary, not a competitor, at the normalizat
 
 #### 4.1.1 Synthetic `messageId`
 
-When the `Message-ID` header is absent or not valid (§5.1), implementations MUST still
+When the `Message-ID` header is absent or not valid ([§5.1](/aecs/specs/aecs-1/07-threading-algorithm/#51-validity-of-a-message-id)), implementations MUST still
 produce a non-null `messageId`. It MUST be deterministic: the same source message MUST
 always yield the same ID.
 
@@ -169,8 +169,8 @@ present.
 | `metadata.cc` | Address[] | Parsed `CC` header recipients. |
 | `metadata.bcc` | Address[] | Parsed `BCC` header. Typically absent from received messages. |
 | `metadata.subject` | string \| null | Decoded `Subject` header value. |
-| `metadata.date` | string \| null | `Date` header value normalized to ISO 8601 UTC. `null` if the header is absent or unparseable — see §6. |
-| `metadata.timestamp` | number \| null | Unix epoch (seconds, UTC). Parsed from `metadata.date`; `null` under the same conditions as `metadata.date` — see §6. |
+| `metadata.date` | string \| null | `Date` header value normalized to ISO 8601 UTC. `null` if the header is absent or unparseable — see [§6](/aecs/specs/aecs-1/08-timestamps/). |
+| `metadata.timestamp` | number \| null | Unix epoch (seconds, UTC). Parsed from `metadata.date`; `null` under the same conditions as `metadata.date` — see [§6](/aecs/specs/aecs-1/08-timestamps/). |
 
 **Address object:**
 ```json
@@ -214,9 +214,9 @@ Consumers preferring minimal context window usage should use `content.forAI`. Co
 - The ordering key is `metadata.timestamp` (i.e. the sender-supplied `Date` header),
   **not** the order in which an implementation received or processed each message.
   These are different orderings whenever mail is delayed, backdated, or a sender's clock is
-  skewed — and per §7, `Date` is sender-controlled, untrusted input. Implementations that
+  skewed — and per [§7](/aecs/specs/aecs-1/09-security-considerations/), `Date` is sender-controlled, untrusted input. Implementations that
   need true receipt/processing order for robustness against clock skew or spoofing SHOULD
-  use `processing.processedAt` (§4.6) for that purpose instead of `thread.position`.
+  use `processing.processedAt` ([§4.6](/aecs/specs/aecs-1/06-field-definitions/#46-processing)) for that purpose instead of `thread.position`.
 - Ties (two messages with identical `metadata.timestamp`) MAY be broken by `messageId`
   string comparison for a stable, deterministic sort; this spec does not mandate a specific
   tiebreak beyond requiring one to exist so position assignment is reproducible.
@@ -259,25 +259,25 @@ character with a non-empty sequence of characters on each side (informally follo
 Implementations MAY apply the full RFC 5322 `msg-id` ABNF for stricter validation — the rule
 above is the minimum bar and is sufficient to satisfy this specification's determinism
 requirements. A header value that is absent, empty, or fails this test is **not valid** and
-MUST be treated as if that header were absent for the purposes of §5.2.
+MUST be treated as if that header were absent for the purposes of [§5.2](/aecs/specs/aecs-1/07-threading-algorithm/#52-algorithm).
 
 ### 5.2 Algorithm
 
 All implementations MUST calculate `threadId` using the following deterministic algorithm, evaluated in order:
 
 1. If a `References` header is present, scan its entries in order and use the **first entry
-   that is a valid Message-ID** (§5.1) as `threadId`. An invalid entry is skipped, not
+   that is a valid Message-ID** ([§5.1](/aecs/specs/aecs-1/07-threading-algorithm/#51-validity-of-a-message-id)) as `threadId`. An invalid entry is skipped, not
    treated as ending the header — e.g. `References: garbage, <valid@example.com>` resolves
    to `valid@example.com`, not to rule 2.
 2. Otherwise, if an `In-Reply-To` header is present and is a valid Message-ID, use it as `threadId`.
 3. Otherwise, if the message's own `Message-ID` header is present and valid, use it as `threadId`.
 4. Otherwise (no valid Message-ID found anywhere on the message), generate a deterministic
    fallback: `SHA-256(from_email + ":" + subject_lowercased_trimmed + ":" + date_utc_iso8601)`,
-   encoded as lowercase hex. See §5.4 for the exact encoding this hash MUST use.
+   encoded as lowercase hex. See [§5.4](/aecs/specs/aecs-1/07-threading-algorithm/#54-encoding-for-the-fallback-hash-rule-4) for the exact encoding this hash MUST use.
 
 ### 5.3 Requirements
 
-- The result MUST be identical for every message in the same conversation, regardless of the order messages are processed — §5.2 depends only on one message's own headers, never on other messages that have or haven't been seen.
+- The result MUST be identical for every message in the same conversation, regardless of the order messages are processed — [§5.2](/aecs/specs/aecs-1/07-threading-algorithm/#52-algorithm) depends only on one message's own headers, never on other messages that have or haven't been seen.
 - Angle brackets in Message-IDs MUST be stripped before comparison or storage (`<abc@example.com>` → `abc@example.com`).
 - Whitespace in Message-IDs MUST be trimmed.
 - The fallback hash (rule 4) is a last resort. Implementations SHOULD log a warning when it is used.
@@ -302,7 +302,7 @@ input to it is normalized identically first:
   `toLocaleLowerCase()` — the Turkish locale's dotless-ı mapping for `I`/`i` is a well-known
   source of divergence), with leading/trailing whitespace trimmed. A missing subject
   contributes the empty string, not the text `"null"`.
-- `date_utc_iso8601` MUST be formatted exactly as `metadata.date` (§6): ISO 8601, UTC, `Z`
+- `date_utc_iso8601` MUST be formatted exactly as `metadata.date` ([§6](/aecs/specs/aecs-1/08-timestamps/)): ISO 8601, UTC, `Z`
   suffix, second precision — e.g. `2026-06-29T10:00:00Z`. When `metadata.date` is `null`,
   `date_utc_iso8601` contributes the empty string (the separating `:` in the concatenation
   is still present).
@@ -312,11 +312,11 @@ input to it is normalized identically first:
 Mail clients implementing the Jamie Zawinski ("JWZ") threading algorithm build a container
 tree incrementally and *re-parent* messages as earlier context arrives out of order — an
 orphaned reply gets retroactively attached once its missing parent finally shows up. AECS-1
-deliberately does not do this: `threadId` (§5.2) is a pure function of one message's own
+deliberately does not do this: `threadId` ([§5.2](/aecs/specs/aecs-1/07-threading-algorithm/#52-algorithm)) is a pure function of one message's own
 headers and never depends on which other messages have or haven't been seen. This is a
 narrower guarantee than JWZ reparenting, traded for the property this spec is built around —
 `threadId` is computable from a single message in isolation, with no external state, and is
-guaranteed stable regardless of processing order (§5.3). An implementation that wants
+guaranteed stable regardless of processing order ([§5.3](/aecs/specs/aecs-1/07-threading-algorithm/#53-requirements)). An implementation that wants
 JWZ-style merge-on-discovery behavior MAY build it as an application-layer feature that
 groups AECS-1 `threadId`s together after the fact; that grouping logic is out of scope here.
 
@@ -384,7 +384,7 @@ Current version: **1.0.0**
 
 | Version | Date | Notes |
 |---|---|---|
-| 1.0.0 | 2026-07-03 | First stable release. Adds §4.1.1 (synthetic `messageId`), §6.1 (`Date` parsing), and clarifies §5.4 fallback-hash inputs. |
+| 1.0.0 | 2026-07-03 | First stable release. Adds [§4.1.1](/aecs/specs/aecs-1/06-field-definitions/#411-synthetic-messageid) (synthetic `messageId`), [§6.1](/aecs/specs/aecs-1/08-timestamps/#61-date-header-parsing) (`Date` parsing), and clarifies [§5.4](/aecs/specs/aecs-1/07-threading-algorithm/#54-encoding-for-the-fallback-hash-rule-4) fallback-hash inputs. |
 | 1.0.0-draft | 2026-06-29 | Initial public draft. |
 
 ---
@@ -402,30 +402,30 @@ Consumers MUST ignore unknown fields to remain forward-compatible.
 
 ## 10. Conformance
 
-Requiredness is stated throughout this document as it comes up (§2, §4, §5, §6). This
+Requiredness is stated throughout this document as it comes up ([§2](/aecs/specs/aecs-1/04-core-principles/), [§4](/aecs/specs/aecs-1/06-field-definitions/), [§5](/aecs/specs/aecs-1/07-threading-algorithm/), [§6](/aecs/specs/aecs-1/08-timestamps/)). This
 section collects it into one checklist. An implementation is **AECS-1-conformant** if and
 only if it satisfies every point below:
 
-1. Every produced object has non-null `messageId` and `threadId` (§4.1) — these are the only
+1. Every produced object has non-null `messageId` and `threadId` ([§4.1](/aecs/specs/aecs-1/06-field-definitions/#41-top-level)) — these are the only
    two fields this spec requires to always be present and non-null. When no valid
-   `Message-ID` header exists, `messageId` MUST be synthetic per §4.1.1.
+   `Message-ID` header exists, `messageId` MUST be synthetic per [§4.1.1](/aecs/specs/aecs-1/06-field-definitions/#411-synthetic-messageid).
 2. Producers SHOULD represent unpopulated optional fields as explicit `null` (or, for
    `attachments`, an empty array). A conformant consumer MUST treat an omitted field and an
-   explicit `null` identically (§2, §4.1).
-3. `threadId` is computed using the exact algorithm in §5.2, including the validity
-   definition in §5.1 and the encoding rules in §5.4 for the fallback hash — not an
+   explicit `null` identically ([§2](/aecs/specs/aecs-1/04-core-principles/), [§4.1](/aecs/specs/aecs-1/06-field-definitions/#41-top-level)).
+3. `threadId` is computed using the exact algorithm in [§5.2](/aecs/specs/aecs-1/07-threading-algorithm/#52-algorithm), including the validity
+   definition in [§5.1](/aecs/specs/aecs-1/07-threading-algorithm/#51-validity-of-a-message-id) and the encoding rules in [§5.4](/aecs/specs/aecs-1/07-threading-algorithm/#54-encoding-for-the-fallback-hash-rule-4) for the fallback hash — not an
    approximation that happens to agree on common-case input.
 4. `thread.position` is `null` unless computed from a fully-available, timestamp-sorted
-   thread per §4.4 — never a value guessed from a single message.
-5. All timestamps satisfy §6 exactly: UTC, ISO 8601 with explicit offset, Unix epoch
+   thread per [§4.4](/aecs/specs/aecs-1/06-field-definitions/#44-thread) — never a value guessed from a single message.
+5. All timestamps satisfy [§6](/aecs/specs/aecs-1/08-timestamps/) exactly: UTC, ISO 8601 with explicit offset, Unix epoch
    seconds, and `null`-not-guessed when the source `Date` header is absent or unparseable.
-6. Unknown/custom fields are namespaced per §9 when producing, and ignored (not an error,
+6. Unknown/custom fields are namespaced per [§9](/aecs/specs/aecs-1/11-extensibility/) when producing, and ignored (not an error,
    not a validation failure) when consuming.
 7. `content.rawFull`, if populated, is byte-faithful to the original message — conformance
-   does not require populating it (§2's "flexible by design"), but if present it MUST NOT be
+   does not require populating it ([§2](/aecs/specs/aecs-1/04-core-principles/)'s "flexible by design"), but if present it MUST NOT be
    normalized, re-encoded, or otherwise altered from the source.
 
-A conformant implementation is NOT required to populate every `content.*` level (§4.3
+A conformant implementation is NOT required to populate every `content.*` level ([§4.3](/aecs/specs/aecs-1/06-field-definitions/#43-content)
 already says implementations SHOULD populate what they're capable of, not MUST populate
 all) — the bar is that *whatever* is populated follows the rules above, not that everything
 is populated. See [`specs/conformance/`](./conformance/) for machine-checkable fixtures
@@ -477,7 +477,7 @@ This example shows a reply message. Note how the content levels diverge as proce
 `thread.position` is `1` here because this example represents the message as it appears
 *after* thread reconciliation (this is the second of two messages, following the root shown
 in `references`). A single, isolated `parse()` of this message with no knowledge of the rest
-of the thread would instead produce `thread.position: null` per §4.4.
+of the thread would instead produce `thread.position: null` per [§4.4](/aecs/specs/aecs-1/06-field-definitions/#44-thread).
 
 ---
 
@@ -487,10 +487,10 @@ of the thread would instead produce `thread.position: null` per §4.4.
 
 | Module | Spec coverage |
 |---|---|
-| `parse()` | Full `NormalizedEmail` production from RFC 5322/MIME (§3–§4, §6) |
-| `resolveThreadId()` | Threading algorithm (§5) |
-| `normalizeDate()` | Timestamp rules (§6) |
-| `EmailThread` | `thread.position` assignment (§4.4) |
+| `parse()` | Full `NormalizedEmail` production from RFC 5322/MIME ([§3](/aecs/specs/aecs-1/05-normalizedemail-schema/)–[§4](/aecs/specs/aecs-1/06-field-definitions/), [§6](/aecs/specs/aecs-1/08-timestamps/)) |
+| `resolveThreadId()` | Threading algorithm ([§5](/aecs/specs/aecs-1/07-threading-algorithm/)) |
+| `normalizeDate()` | Timestamp rules ([§6](/aecs/specs/aecs-1/08-timestamps/)) |
+| `EmailThread` | `thread.position` assignment ([§4.4](/aecs/specs/aecs-1/06-field-definitions/#44-thread)) |
 
 Conformance tests in `packages/mail/test/core.test.mjs` run every fixture in
 [`specs/conformance/fixtures/`](./conformance/fixtures/).

@@ -4,8 +4,8 @@ title: "14. Extensibility"
 
 
 > **Note:** the extension points below (`createTools`, custom processors, custom
-> providers) belong to roadmap modules (§6–§9). The implemented core's extension
-> points are `ParseOptions.cleaner`, `wrapper`, `onAttachment`, and `threadIdResolver` (§12.1).
+> providers) belong to roadmap modules ([§6](/aecs/specs/aecs-sdk-1/06-ai-provider-interface/)–[§9](/aecs/specs/aecs-sdk-1/09-attachment-handling/)). The implemented core's extension
+> points are `ParseOptions.cleaner`, `wrapper`, `onAttachment`, and `threadIdResolver` ([§12.1](/aecs/specs/aecs-sdk-1/12-configuration-reference/#121-parseoptions)).
 
 ### 14.1 Custom AI Tools
 
@@ -60,6 +60,6 @@ const email = await parse(message) as AppEmail;
 email.x_ticket_id = myTools.extractTicketId(email)?.ticketId ?? null;
 ```
 
-Custom fields must use the `x_` prefix per AECS-1 §9.
+Custom fields must use the `x_` prefix per AECS-1 [§9](/aecs/specs/aecs-1/11-extensibility/).
 
 ---
