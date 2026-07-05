@@ -14,12 +14,10 @@ implement it in any language, without asking permission.
 
 `@mvrx/aecs` is the framework-agnostic, zero-infrastructure-dependency MIT reference
 implementation of that spec: parsing, content cleaning, threading, and message
-normalization, with no Cloudflare or storage assumptions baked in. `@mvrx/mail`
-(a separate, AGPL-3.0-licensed package) is the Cloudflare Email Routing SDK built on top
-of it.
+normalization, with no Cloudflare or storage assumptions baked in.
 
 - [AECS-1 specification](./specs/AECS-1-ai-email-consumption.md) — the normative document
-- [AECS-SDK-1 specification](./specs/AECS-SDK-1-specification.md) — the SDK surface `@mvrx/mail` implements against
+- [AECS-SDK-1 specification](./specs/AECS-SDK-1-specification.md) — the target SDK surface for implementations
 - [JSON Schema](./specs/schema/normalized-email.schema.json) — machine-checkable `NormalizedEmail` shape
 - [Conformance suite](./specs/conformance/) — fixtures + an independent checker (`verify.py`)
 - [Docs site](https://mvrxapp.github.io/aecs/) — browsable version of the above
@@ -48,5 +46,4 @@ console.log(email.content.forAI);   // wrapped, AI-ready representation
 
 ## License
 
-MIT. See [`LICENSE`](./LICENSE). This package is licensed separately from `@mvrx/mail`
-(AGPL-3.0-only), which depends on it.
+MIT. See [`LICENSE`](./LICENSE).
