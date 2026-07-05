@@ -1,7 +1,6 @@
 ---
-layout: default
-title: AECS-1 specification
-nav_order: 2
+title: "AECS-1 (v1.0.0, Final)"
+description: "The full normative AECS-1 v1.0.0 (Final) specification — NormalizedEmail schema, threading, timestamps, security, and conformance."
 ---
 
 # AECS-1: AI Email Consumption Specification

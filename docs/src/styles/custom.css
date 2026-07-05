@@ -1,0 +1,13 @@
+/* Neutral, monochrome accent — deliberately restrained for a spec/standards site,
+   not Starlight's default purple. Matches the logo's ink-on-paper tone. */
+:root {
+  --sl-color-accent-low: #2b2b2b;
+  --sl-color-accent: #4a4a4a;
+  --sl-color-accent-high: #cfcfcf;
+}
+
+:root[data-theme="light"] {
+  --sl-color-accent-low: #e5e5e5;
+  --sl-color-accent: #4a4a4a;
+  --sl-color-accent-high: #1a1a1a;
+}

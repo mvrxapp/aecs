@@ -1,7 +1,6 @@
 ---
-layout: default
-title: AECS-SDK-1 specification
-nav_order: 3
+title: "AECS-SDK-1 (v0.3.0-draft)"
+description: "The AECS SDK specification (0.3.0-draft) — the full target TypeScript SDK surface, with implemented-vs-roadmap status per section."
 ---
 
 # AECS SDK Specification
