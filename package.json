@@ -37,9 +37,10 @@
       "import": "./dist/wrappers.js",
       "types": "./dist/wrappers.d.ts"
     },
-    "./schema": "./schema/normalized-email.schema.json"
+    "./schema": "./specs/schema/normalized-email.schema.json"
   },
   "scripts": {
+    "prepare": "tsc",
     "typecheck": "tsc --noEmit",
     "build": "tsc",
     "test": "node --test test/*.test.mjs",
