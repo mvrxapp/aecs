@@ -10,7 +10,8 @@ export default defineConfig({
       description:
         "AI Email Consumption Specification — an open standard (CC0) for normalizing raw RFC 5322/MIME email into AI-ready JSON.",
       logo: {
-        src: "./src/assets/logo.svg",
+        light: "./src/assets/logo-light.svg",
+        dark: "./src/assets/logo-dark.svg",
         replacesTitle: false,
       },
       social: [
