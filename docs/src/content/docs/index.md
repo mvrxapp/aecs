@@ -14,8 +14,8 @@ a framework-agnostic, MIT-licensed reference implementation.
 
 ## Specification
 
-- [**AECS-1**](/aecs/specs/aecs-1/) (v1.0.0, Final) — the normative document
-- [**AECS-SDK-1**](/aecs/specs/aecs-sdk-1/) (v0.3.0-draft) — the target SDK surface for implementations
+- [**AECS-1**](/aecs/specs/aecs-1/00-overview/) (v1.0.0, Final) — the normative document
+- [**AECS-SDK-1**](/aecs/specs/aecs-sdk-1/00-overview/) (v0.3.0-draft) — the target SDK surface for implementations
 
 ## Reference
 

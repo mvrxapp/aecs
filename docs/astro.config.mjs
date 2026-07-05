@@ -23,8 +23,14 @@ export default defineConfig({
         {
           label: "Specification",
           items: [
-            { label: "AECS-1 (v1.0.0, Final)", link: "/specs/aecs-1/" },
-            { label: "AECS-SDK-1 (v0.3.0-draft)", link: "/specs/aecs-sdk-1/" },
+            {
+              label: "AECS-1 (v1.0.0, Final)",
+              items: [{ autogenerate: { directory: "specs/aecs-1" } }],
+            },
+            {
+              label: "AECS-SDK-1 (v0.3.0-draft)",
+              items: [{ autogenerate: { directory: "specs/aecs-sdk-1" } }],
+            },
           ],
         },
         {
