@@ -1,0 +1,122 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mvrx.app/schema/aecs-1/normalized-email.schema.json",
+  "title": "NormalizedEmail",
+  "description": "Machine-readable schema for AECS-1 v1.0.0 NormalizedEmail (see ../AECS-1-ai-email-consumption.md §3-§4). Conformance convention (§10): only messageId/threadId are required anywhere in this document. Every other property MAY be omitted; properties whose prose type is documented as 'X | null' MAY additionally hold an explicit null instead of being omitted — both mean 'not populated' and a conformant consumer MUST treat them identically. x_-prefixed custom fields are permitted at any level per §9 and are the only additional properties this schema accepts beyond what's listed.",
+  "type": "object",
+  "required": ["messageId", "threadId"],
+  "additionalProperties": false,
+  "patternProperties": {
+    "^x_": true
+  },
+  "properties": {
+    "messageId": {
+      "type": "string",
+      "minLength": 1,
+      "description": "§4.1 — Message-ID header, angle brackets stripped. Always required, never null."
+    },
+    "threadId": {
+      "type": "string",
+      "minLength": 1,
+      "description": "§4.1, §5 — deterministic threading identifier. Always required, never null."
+    },
+    "metadata": { "$ref": "#/$defs/metadata" },
+    "content": { "$ref": "#/$defs/content" },
+    "thread": { "$ref": "#/$defs/thread" },
+    "attachments": {
+      "type": "array",
+      "description": "§4.5 — empty array if there are no attachments (not omitted, not null).",
+      "items": { "$ref": "#/$defs/attachment" }
+    },
+    "processing": { "$ref": "#/$defs/processing" }
+  },
+  "$defs": {
+    "isoDateTimeUtc": {
+      "type": "string",
+      "description": "§6 — ISO 8601, UTC only, explicit Z or +00:00 offset required.",
+      "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.\\d+)?(Z|\\+00:00)$"
+    },
+    "address": {
+      "type": "object",
+      "additionalProperties": false,
+      "patternProperties": { "^x_": true },
+      "required": ["email"],
+      "properties": {
+        "name": { "type": ["string", "null"] },
+        "email": { "type": "string", "minLength": 3 }
+      }
+    },
+    "metadata": {
+      "type": "object",
+      "additionalProperties": false,
+      "patternProperties": { "^x_": true },
+      "properties": {
+        "from": { "$ref": "#/$defs/address" },
+        "to": { "type": "array", "items": { "$ref": "#/$defs/address" } },
+        "cc": { "type": "array", "items": { "$ref": "#/$defs/address" } },
+        "bcc": { "type": "array", "items": { "$ref": "#/$defs/address" } },
+        "subject": { "type": ["string", "null"] },
+        "date": {
+          "description": "§4.2, §6 — null if Date header absent/unparseable.",
+          "oneOf": [{ "$ref": "#/$defs/isoDateTimeUtc" }, { "type": "null" }]
+        },
+        "timestamp": {
+          "type": ["integer", "null"],
+          "description": "§2, §4.2 — Unix epoch seconds, integer. null under the same condition as metadata.date."
+        }
+      }
+    },
+    "content": {
+      "type": "object",
+      "additionalProperties": false,
+      "patternProperties": { "^x_": true },
+      "properties": {
+        "rawFull": { "type": ["string", "null"] },
+        "raw":     { "type": ["string", "null"] },
+        "html":    { "type": ["string", "null"] },
+        "text":    { "type": ["string", "null"] },
+        "clean":   { "type": ["string", "null"] },
+        "forAI":   { "type": ["string", "null"] }
+      }
+    },
+    "thread": {
+      "type": "object",
+      "additionalProperties": false,
+      "patternProperties": { "^x_": true },
+      "properties": {
+        "position": {
+          "type": ["integer", "null"],
+          "minimum": 0,
+          "description": "§4.4 — null unless computed from a fully-available, timestamp-sorted thread."
+        },
+        "inReplyTo": { "type": ["string", "null"] },
+        "references": { "type": "array", "items": { "type": "string" } }
+      }
+    },
+    "attachment": {
+      "type": "object",
+      "additionalProperties": false,
+      "patternProperties": { "^x_": true },
+      "required": ["filename", "contentType", "size"],
+      "properties": {
+        "id": {
+          "type": ["string", "null"],
+          "description": "§4.5 — optional stable id, e.g. `${messageId}:${index}`."
+        },
+        "filename":    { "type": "string" },
+        "contentType": { "type": "string", "minLength": 1 },
+        "size":        { "type": "integer", "minimum": 0 },
+        "cid":         { "type": ["string", "null"] }
+      }
+    },
+    "processing": {
+      "type": "object",
+      "additionalProperties": false,
+      "patternProperties": { "^x_": true },
+      "properties": {
+        "processedAt": { "$ref": "#/$defs/isoDateTimeUtc" },
+        "specVersion": { "type": "string", "minLength": 1 }
+      }
+    }
+  }
+}

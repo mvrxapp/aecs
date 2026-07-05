@@ -1,0 +1,17 @@
+{
+  "description": "Fallback hash (§5 rule 4) with absent Date — date_utc_iso8601 contributes the empty string, so the hash input is 'eve@example.com:test:' (verified independently with shasum -a 256).",
+  "specSection": "AECS-1 §5 rule 4, §5.4",
+  "input": {
+    "messageId": null,
+    "inReplyTo": null,
+    "references": [],
+    "from": "eve@example.com",
+    "subject": "test",
+    "date": null
+  },
+  "expected": {
+    "threadId": "1c87d1cf731b328c86feba53ee524b3ed7cc87a9a56518c4a5e0769d28259f1e",
+    "metadataDate": null,
+    "metadataTimestamp": null
+  }
+}

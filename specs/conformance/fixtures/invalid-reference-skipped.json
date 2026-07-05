@@ -1,0 +1,17 @@
+{
+  "description": "References contains invalid entries before a valid one — invalid entries are skipped (§5.2 rule 1), not treated as ending the header.",
+  "specSection": "AECS-1 §5 rule 1",
+  "input": {
+    "messageId": "reply@mail.example.com",
+    "inReplyTo": null,
+    "references": ["no-at-sign", "two@@ats.com", "valid@example.com"],
+    "from": "alice@example.com",
+    "subject": "Re: test",
+    "date": "2026-06-29T14:32:00Z"
+  },
+  "expected": {
+    "threadId": "valid@example.com",
+    "metadataDate": "2026-06-29T14:32:00Z",
+    "metadataTimestamp": 1782743520
+  }
+}

@@ -1,0 +1,17 @@
+{
+  "description": "Neither References nor In-Reply-To present — this is the root of a new conversation, so threadId is the message's own Message-ID.",
+  "specSection": "AECS-1 §5 rule 3",
+  "input": {
+    "messageId": "root1@mail.example.com",
+    "inReplyTo": null,
+    "references": [],
+    "from": "alice@example.com",
+    "subject": "Lunch tomorrow?",
+    "date": "2026-04-30T17:00:00Z"
+  },
+  "expected": {
+    "threadId": "root1@mail.example.com",
+    "metadataDate": "2026-04-30T17:00:00Z",
+    "metadataTimestamp": 1777568400
+  }
+}

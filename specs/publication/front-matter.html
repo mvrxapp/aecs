@@ -1,0 +1,61 @@
+<div class="doc-header">MVRX Group
+AI Email Consumption Specification: AECS-1
+Version 1.0.0
+3 July 2026</div>
+
+<div class="doc-title">AECS-1: AI Email Consumption Specification</div>
+<div class="doc-subtitle">NormalizedEmail — A Community Standard for AI-Ready Email</div>
+
+<div class="boilerplate">
+  <h2>Abstract</h2>
+  <p>
+    This specification defines a standardized structure — <code>NormalizedEmail</code> —
+    for representing a parsed RFC 5322 email message in a form suitable for AI and LLM
+    consumption, database storage, and conversation threading. It focuses exclusively on
+    how a single message should be structured after normalization. Transport,
+    authentication, mailbox management, and platform integration are out of scope.
+  </p>
+
+  <h2>Status of This Document</h2>
+  <div class="status-box">
+    <p>
+      <strong>Version 1.0.0 — Final.</strong> This document is the normative definition of
+      the AECS-1 standard. Machine-checkable artifacts (JSON Schema, conformance fixtures)
+      are maintained alongside this specification in the
+      <code>github.com/mvrxapp/mail</code> repository.
+    </p>
+    <p>
+      Comments, errata, and implementation experience reports may be sent to
+      <code>specs@mvrx.app</code>. An errata page will be published at
+      <code>https://mvrx.app/specs/aecs-1/errata</code> when the first erratum is recorded.
+    </p>
+    <p>
+      The reference implementation is <code>@mvrx/mail</code> (TypeScript). Conformance
+      fixtures for the threading algorithm (§5) and timestamp rules (§6) are in
+      <code>specs/conformance/fixtures/</code>.
+    </p>
+  </div>
+
+  <h2>Conventions Used in This Document</h2>
+  <p>
+    The key words <strong>MUST</strong>, <strong>MUST NOT</strong>, <strong>REQUIRED</strong>,
+    <strong>SHALL</strong>, <strong>SHALL NOT</strong>, <strong>SHOULD</strong>,
+    <strong>SHOULD NOT</strong>, <strong>RECOMMENDED</strong>, <strong>NOT RECOMMENDED</strong>,
+    <strong>MAY</strong>, and <strong>OPTIONAL</strong> in this document are to be interpreted
+    as described in <a href="https://www.rfc-editor.org/rfc/rfc2119">RFC 2119</a> and
+    <a href="https://www.rfc-editor.org/rfc/rfc8174">RFC 8174</a> when, and only when, they
+    appear in all capitals, as shown here.
+  </p>
+
+  <div class="copyright-notice">
+    <p><strong>Copyright Notice</strong></p>
+    <p>
+      This specification is dedicated to the public domain under
+      <a href="https://creativecommons.org/publicdomain/zero/1.0/">CC0 1.0 Universal</a>.
+      To the extent possible under law, MVRX Group has waived all copyright and related
+      rights to this work worldwide.
+    </p>
+  </div>
+</div>
+
+<hr class="page-break" />

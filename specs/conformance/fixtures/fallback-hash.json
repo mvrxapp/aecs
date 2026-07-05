@@ -1,0 +1,17 @@
+{
+  "description": "No valid Message-ID anywhere (missing/malformed on the message itself and on References/In-Reply-To) — threadId falls back to SHA-256(from_email + ':' + subject_lowercased_trimmed + ':' + date_utc_iso8601), lowercase hex. This fixture's expected threadId was independently verified with: printf '%s' 'unknown@example.com:quick question:2026-06-29T10:00:00Z' | shasum -a 256",
+  "specSection": "AECS-1 §5 rule 4",
+  "input": {
+    "messageId": null,
+    "inReplyTo": null,
+    "references": [],
+    "from": "unknown@example.com",
+    "subject": "  Quick Question  ",
+    "date": "2026-06-29T10:00:00Z"
+  },
+  "expected": {
+    "threadId": "1deea570c897d359f479d83d46d2eb5026edb97da06b27ba72fb089a0d4230d2",
+    "metadataDate": "2026-06-29T10:00:00Z",
+    "metadataTimestamp": 1782727200
+  }
+}

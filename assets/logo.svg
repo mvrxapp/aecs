@@ -1,0 +1,6 @@
+<svg width="64" height="64" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="AECS logo">
+  <path d="M20 13 L7 32 L20 51" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M44 13 L57 32 L44 51" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <rect x="24" y="25" width="16" height="13" rx="1.5" stroke="currentColor" stroke-width="3"/>
+  <path d="M24.5 26 L32 33 L39.5 26" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

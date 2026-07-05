@@ -1,0 +1,228 @@
+/**
+ * AECS-1 PDF stylesheet — hybrid of IETF RFC 7322 layout and W3C TR conventions.
+ * See specs/publication/README.md for rationale.
+ */
+
+@page {
+  size: letter;
+  margin: 0.9in 1in 1.1in 1in;
+}
+
+@page :first {
+  margin-top: 0.75in;
+}
+
+html {
+  font-size: 11pt;
+}
+
+body {
+  font-family: Charter, "Bitstream Charter", Georgia, "Times New Roman", serif;
+  line-height: 1.48;
+  color: #111;
+  max-width: none;
+  margin: 0;
+  padding: 0;
+  hyphens: manual;
+}
+
+/* ── RFC-style first-page header ─────────────────────────────────────────── */
+
+.doc-header {
+  font-family: Consolas, "Courier New", monospace;
+  font-size: 10pt;
+  line-height: 1.35;
+  margin: 0 0 1.5em;
+  white-space: pre-wrap;
+}
+
+.doc-title {
+  text-align: center;
+  font-size: 16pt;
+  font-weight: bold;
+  margin: 1.5em 0 0.25em;
+  line-height: 1.25;
+  page-break-after: avoid;
+}
+
+.doc-subtitle {
+  text-align: center;
+  font-size: 12pt;
+  font-weight: normal;
+  margin: 0 0 1.5em;
+  color: #333;
+}
+
+/* ── Boilerplate sections ─────────────────────────────────────────────────── */
+
+.boilerplate h2 {
+  font-size: 12pt;
+  margin-top: 1.75em;
+  margin-bottom: 0.5em;
+  page-break-after: avoid;
+}
+
+.boilerplate p,
+.boilerplate li {
+  font-size: 10.5pt;
+}
+
+.status-box {
+  border: 1px solid #999;
+  padding: 0.75em 1em;
+  margin: 1em 0;
+  background: #fafafa;
+  font-size: 10.5pt;
+}
+
+.copyright-notice {
+  font-size: 9.5pt;
+  color: #333;
+  border-top: 1px solid #ccc;
+  padding-top: 0.75em;
+  margin-top: 1.5em;
+}
+
+/* ── Body (converted markdown) ────────────────────────────────────────────── */
+
+h1 {
+  font-size: 16pt;
+  text-align: center;
+  margin: 2em 0 0.5em;
+  page-break-before: always;
+}
+
+h1:first-of-type {
+  page-break-before: avoid;
+  margin-top: 0;
+}
+
+h2 {
+  font-size: 13pt;
+  margin-top: 1.6em;
+  margin-bottom: 0.4em;
+  page-break-after: avoid;
+}
+
+h3 {
+  font-size: 11.5pt;
+  margin-top: 1.2em;
+  margin-bottom: 0.35em;
+  page-break-after: avoid;
+}
+
+h4 {
+  font-size: 11pt;
+  font-style: italic;
+  margin-top: 1em;
+  page-break-after: avoid;
+}
+
+p {
+  margin: 0.6em 0;
+  orphans: 3;
+  widows: 3;
+}
+
+ul,
+ol {
+  margin: 0.5em 0 0.75em;
+  padding-left: 1.75em;
+  list-style-position: outside;
+}
+
+ul {
+  list-style-type: disc;
+}
+
+ol {
+  list-style-type: decimal;
+}
+
+li {
+  margin: 0.25em 0;
+  display: list-item;
+}
+
+li > ul,
+li > ol {
+  margin-top: 0.2em;
+}
+
+hr {
+  border: none;
+  border-top: 1px solid #ccc;
+  margin: 1.5em 0;
+}
+
+/* RFC 2119 keywords appear as plain uppercase in source */
+p strong:first-child,
+li strong:first-child {
+  font-weight: bold;
+}
+
+code {
+  font-family: Consolas, "Courier New", monospace;
+  font-size: 9.5pt;
+  background: #f4f4f4;
+  padding: 0.05em 0.25em;
+  border-radius: 2px;
+}
+
+pre {
+  font-family: Consolas, "Courier New", monospace;
+  font-size: 8.5pt;
+  line-height: 1.35;
+  background: #f8f8f8;
+  border: 1px solid #ddd;
+  padding: 0.75em 1em;
+  overflow-x: auto;
+  page-break-inside: avoid;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+}
+
+pre code {
+  background: none;
+  padding: 0;
+  font-size: inherit;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 9.5pt;
+  margin: 0.75em 0 1em;
+  page-break-inside: avoid;
+}
+
+th,
+td {
+  border: 1px solid #bbb;
+  padding: 0.35em 0.5em;
+  vertical-align: top;
+  text-align: left;
+}
+
+th {
+  background: #eee;
+  font-weight: bold;
+}
+
+blockquote {
+  margin: 0.75em 0;
+  padding: 0.25em 0 0.25em 1em;
+  border-left: 3px solid #ccc;
+  color: #333;
+}
+
+a {
+  color: #004488;
+  text-decoration: none;
+}
+
+/* ── Page footer (puppeteer header/footer template uses separate HTML) ───── */
+
+.page-break {
+  page-break-before: always;
+}

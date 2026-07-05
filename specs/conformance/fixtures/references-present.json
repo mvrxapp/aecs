@@ -1,0 +1,17 @@
+{
+  "description": "References header present with multiple Message-IDs — threadId is the first one listed, not the message's own Message-ID.",
+  "specSection": "AECS-1 §5 rule 1",
+  "input": {
+    "messageId": "reply789@mail.example.com",
+    "inReplyTo": "mid2@mail.example.com",
+    "references": ["root456@mail.example.com", "mid2@mail.example.com"],
+    "from": "bob@example.com",
+    "subject": "Re: Project update",
+    "date": "2026-06-29T14:32:00Z"
+  },
+  "expected": {
+    "threadId": "root456@mail.example.com",
+    "metadataDate": "2026-06-29T14:32:00Z",
+    "metadataTimestamp": 1782743520
+  }
+}

@@ -1,0 +1,17 @@
+{
+  "description": "Date header absent — metadata.date and metadata.timestamp must both be null rather than defaulting to e.g. processing time.",
+  "specSection": "AECS-1 §6",
+  "input": {
+    "messageId": "no-date@mail.example.com",
+    "inReplyTo": null,
+    "references": [],
+    "from": "eve@example.com",
+    "subject": "No Date header on this one",
+    "date": null
+  },
+  "expected": {
+    "threadId": "no-date@mail.example.com",
+    "metadataDate": null,
+    "metadataTimestamp": null
+  }
+}

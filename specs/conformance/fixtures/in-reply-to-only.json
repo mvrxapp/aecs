@@ -1,0 +1,17 @@
+{
+  "description": "No References header, but In-Reply-To is present — threadId is the In-Reply-To value.",
+  "specSection": "AECS-1 §5 rule 2",
+  "input": {
+    "messageId": "reply2@mail.example.com",
+    "inReplyTo": "root1@mail.example.com",
+    "references": [],
+    "from": "carol@example.com",
+    "subject": "Re: Lunch tomorrow?",
+    "date": "2026-05-01T09:00:00Z"
+  },
+  "expected": {
+    "threadId": "root1@mail.example.com",
+    "metadataDate": "2026-05-01T09:00:00Z",
+    "metadataTimestamp": 1777626000
+  }
+}

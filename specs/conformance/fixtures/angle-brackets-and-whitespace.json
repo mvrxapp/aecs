@@ -1,0 +1,17 @@
+{
+  "description": "Unlike the other fixtures, this one's input is deliberately NOT pre-normalized — it carries raw header values (angle brackets, stray whitespace) to test the normalization step itself. §5 requires angle brackets stripped and whitespace trimmed before the first References entry is used as threadId.",
+  "specSection": "AECS-1 §5 requirements (angle-bracket stripping, whitespace trimming)",
+  "input": {
+    "messageId": "<reply3@mail.example.com>",
+    "inReplyTo": "  <mid2@mail.example.com>  ",
+    "references": ["  <root9@mail.example.com>", "<mid2@mail.example.com>  "],
+    "from": "dave@example.com",
+    "subject": "Re: Budget approval",
+    "date": "2026-03-10T12:00:00Z"
+  },
+  "expected": {
+    "threadId": "root9@mail.example.com",
+    "metadataDate": "2026-03-10T12:00:00Z",
+    "metadataTimestamp": 1773144000
+  }
+}

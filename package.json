@@ -1,0 +1,62 @@
+{
+  "name": "@mvrx/aecs",
+  "version": "0.1.0",
+  "description": "AECS reference implementation: deterministically normalize raw RFC 5322/MIME email into AI-ready NormalizedEmail objects. Framework-agnostic, zero infrastructure dependencies.",
+  "license": "MIT",
+  "type": "module",
+  "packageManager": "pnpm@9.0.0",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "files": ["dist", "specs/schema", "specs/conformance"],
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    },
+    "./content": {
+      "import": "./dist/content.js",
+      "types": "./dist/content.d.ts"
+    },
+    "./parse": {
+      "import": "./dist/parse.js",
+      "types": "./dist/parse.d.ts"
+    },
+    "./thread": {
+      "import": "./dist/thread.js",
+      "types": "./dist/thread.d.ts"
+    },
+    "./threading": {
+      "import": "./dist/threading.js",
+      "types": "./dist/threading.d.ts"
+    },
+    "./types": {
+      "import": "./dist/types.js",
+      "types": "./dist/types.d.ts"
+    },
+    "./wrappers": {
+      "import": "./dist/wrappers.js",
+      "types": "./dist/wrappers.d.ts"
+    },
+    "./schema": "./schema/normalized-email.schema.json"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "build": "tsc",
+    "test": "node --test test/*.test.mjs",
+    "sync-docs": "node scripts/sync-docs-pages.mjs"
+  },
+  "dependencies": {
+    "postal-mime": "^2.0.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.8.0"
+  },
+  "keywords": ["email", "ai", "mime", "rfc5322", "aecs", "normalize", "threading", "spec"],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/mvrxapp/aecs.git"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}
