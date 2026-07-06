@@ -1,14 +1,14 @@
 ---
-title: "16. Real-time Events (UserHub)"
+title: "16. Real-time Events (UserRelay)"
 ---
 
 
 > **Status: Roadmap.** This section specifies a planned module; it is not yet implemented in `@mvrx/mail`.
 
-The `UserHub` Durable Object fans real-time events to connected browser clients via SSE. Each user has one `UserHub` instance keyed by their user ID.
+The `UserRelay` Durable Object fans real-time events to connected browser clients via SSE. Each user has one `UserRelay` instance keyed by their user ID.
 
 `userId` is opaque to the SDK — it's whatever string key your app uses to route events to
-the right `UserHub` instance (matches `NotificationBus.publish(userId, event)` in the
+the right `UserRelay` instance (matches `NotificationBus.publish(userId, event)` in the
 adapters interface). The SDK has no concept of accounts, mailbox ownership, or multi-tenancy;
 resolving "which user(s) should be notified about this inbound message" is an application
 concern. For the simplest case — one mailbox per user — the recipient address is a
@@ -19,14 +19,14 @@ mailbox-to-userIds lookup, since one inbound message may need to fan out to seve
 
 ```typescript
 // src/index.ts
-export { UserHub } from "@mvrx/mail/hub";
+export { UserRelay } from "@mvrx/mail/relay";
 
 export default {
   async fetch(req: Request, env: Env) {
     // Mount the SSE endpoint for browser clients
     const url = new URL(req.url);
-    if (url.pathname === "/hub") {
-      return hubRouter(req, env.HUB, getUserId(req));
+    if (url.pathname === "/relay") {
+      return relayRouter(req, env.RELAY, getUserId(req));
     }
     // ... rest of your router
   },
@@ -40,7 +40,7 @@ export default {
     const userId = message.to;
 
     // Publish to all connected clients for this user
-    await publishEvent(env.HUB, userId, {
+    await publishEvent(env.RELAY, userId, {
       type: "new_message",
       payload: {
         messageId: email.messageId,
@@ -84,22 +84,22 @@ type MailEvent =
     };
 ```
 
-### 16.3 Hub API
+### 16.3 Relay API
 
 ```typescript
-import { publishEvent, hubRouter } from "@mvrx/mail/hub";
+import { publishEvent, relayRouter } from "@mvrx/mail/relay";
 
 // Publish from any Worker handler
 function publishEvent(
-  hub:    DurableObjectNamespace,
+  relay:    DurableObjectNamespace,
   userId: string,
   event:  MailEvent
 ): Promise<void>
 
 // Mount as an SSE endpoint — handles connection upgrade + keep-alive
-function hubRouter(
+function relayRouter(
   req:    Request,
-  hub:    DurableObjectNamespace,
+  relay:    DurableObjectNamespace,
   userId: string
 ): Promise<Response>
 ```
@@ -107,7 +107,7 @@ function hubRouter(
 ### 16.4 Browser Client
 
 ```typescript
-const events = new EventSource("/hub");
+const events = new EventSource("/relay");
 
 events.addEventListener("new_message", (e) => {
   const { messageId, from, subject } = JSON.parse(e.data);
@@ -120,23 +120,23 @@ events.addEventListener("rule_fired", (e) => {
 });
 ```
 
-**Cost note:** the reference `hubRouter()` holds an SSE connection (a long-lived
+**Cost note:** the reference `relayRouter()` holds an SSE connection (a long-lived
 `ReadableStream` response) open per connected client, not a WebSocket. This is *not* the
 same as Cloudflare's [WebSocket Hibernation API](https://developers.cloudflare.com/durable-objects/api/websockets/)
 — hibernation lets a Durable Object evict an idle **WebSocket** connection from memory
 while keeping it open at the edge, waking only on a new frame. A plain SSE stream has no
-equivalent: the `UserHub` instance holding it open stays active, and billed, for as long as
+equivalent: the `UserRelay` instance holding it open stays active, and billed, for as long as
 a client is connected, not just when an event is published. If per-connection duration cost
-matters at your scale, implement `NotificationBus` (the interface `UserHub` satisfies) over
+matters at your scale, implement `NotificationBus` (the interface `UserRelay` satisfies) over
 WebSockets with hibernation instead — nothing else in the SDK depends on SSE specifically.
 
 ### 16.5 Delivery Guarantees & Reconnection
 
-The reference `hubRouter()`/`UserHub` is **fire-and-forget, at-most-once, no replay**:
+The reference `relayRouter()`/`UserRelay` is **fire-and-forget, at-most-once, no replay**:
 
 - If no client is connected when `publishEvent()` is called, the event is dropped — it is
   not queued or persisted for a client that connects later.
-- `hubRouter()` does not assign event IDs and does not honor the SSE `Last-Event-ID` request
+- `relayRouter()` does not assign event IDs and does not honor the SSE `Last-Event-ID` request
   header, even though the browser's native `EventSource` sends it automatically on
   reconnect. A reconnecting client gets only events published after the new connection is
   established — nothing published during the gap.
@@ -147,7 +147,7 @@ The reference `hubRouter()`/`UserHub` is **fire-and-forget, at-most-once, no rep
   never rely on the event stream alone for correctness, only for low-latency "something
   changed, go refetch" signaling.
 - Implementations that need at-least-once delivery or replay (e.g. a `NotificationBus` swap
-  to a durable queue) MAY add it; `hubRouter()`/`UserHub` is the reference implementation of
+  to a durable queue) MAY add it; `relayRouter()`/`UserRelay` is the reference implementation of
   the interface, not a delivery-guarantee contract of it.
 
 ---

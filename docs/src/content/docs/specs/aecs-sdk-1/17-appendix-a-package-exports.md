@@ -11,7 +11,7 @@ title: "Appendix A: Package Exports"
 > wrapper exports listed under `@mvrx/mail` below actually exist. `sendEmail`, `d1Init`,
 > `d1Store`, `getThread`, `getMessage`, `listMessages`, `evaluateRules`, `Rule`, `Action`,
 > `Condition`, `OutboundEmail`, and every other subpath below (`/providers`, `/transports`,
-> `/hub`, `/tools`, `/ai-tools`, `/compose`, `/attachments`) are roadmap — see the
+> `/relay`, `/tools`, `/ai-tools`, `/compose`, `/attachments`) are roadmap — see the
 > Implementation Status note near the top of this document.
 
 ```
@@ -24,7 +24,7 @@ title: "Appendix A: Package Exports"
 
 @mvrx/mail/transports   — cfTransport, smtpTransport, EmailTransport (interface)
 
-@mvrx/mail/hub          — UserHub (DO class), publishEvent(), hubRouter(), MailEvent
+@mvrx/mail/relay          — UserRelay (DO class), publishEvent(), relayRouter(), MailEvent
 
 @mvrx/mail/tools        — deterministic tools: extractAddresses, detectIntent,
                           requiresReply, extractDates, extractLinks
