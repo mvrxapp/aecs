@@ -172,6 +172,14 @@ nav .large {
   text-transform: none;
 }
 
+.sidebar-pane .group-label .large {
+  color: var(--sl-color-gray-3);
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
 starlight-theme-select select {
   border-radius: 8px;
 }
@@ -184,7 +192,10 @@ details summary {
   border-radius: 6px;
 }
 
-.sidebar-pane li a[aria-current="true"] {
+.sidebar-pane li a[aria-current="page"] {
+  background-color: var(--sl-color-accent-low);
+  color: var(--sl-color-white);
+  border-radius: 6px;
   font-weight: 500;
 }
 
@@ -223,4 +234,30 @@ details summary {
 
 .expressive-code {
   margin-block: 1.25rem;
+}
+
+.expressive-code .frame:not(.has-title):not(.is-terminal) {
+  --button-spacing: 0.3rem;
+}
+
+.expressive-code .frame:not(.has-title):not(.is-terminal) pre {
+  padding-top: 2.5rem;
+}
+
+.expressive-code .frame:not(.has-title):not(.is-terminal) pre[data-language]::before {
+  content: attr(data-language);
+  position: absolute;
+  inset-block-start: 0;
+  inset-inline: 0;
+  height: 2.5rem;
+  display: flex;
+  align-items: center;
+  padding-inline: 1rem;
+  font-size: 0.75rem;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--sl-color-gray-3);
+  border-bottom: 0.5px solid var(--sl-color-hairline);
+  border-radius: 8px 8px 0 0;
 }

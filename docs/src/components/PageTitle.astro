@@ -1,0 +1,69 @@
+---
+const { entry } = Astro.locals.starlightRoute;
+const title = entry.data.title;
+const rawContent = entry.body ?? "";
+---
+
+<h1 id="_top">{title}</h1>
+<button class="copy-page-button" type="button" data-content={rawContent}>
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M3 19a2 2 0 0 1-1-2V2a2 2 0 0 1 1-1h13a2 2 0 0 1 2 1"></path>
+    <rect x="6" y="5" width="16" height="18" rx="1.5" ry="1.5"></rect>
+  </svg>
+  <span>Copy Page</span>
+</button>
+
+<script>
+  document.querySelectorAll<HTMLButtonElement>(".copy-page-button").forEach((button) => {
+    button.addEventListener("click", async () => {
+      const content = button.dataset.content ?? "";
+      await navigator.clipboard.writeText(content);
+      const label = button.querySelector("span");
+      if (!label) return;
+      const original = label.textContent;
+      label.textContent = "Copied!";
+      window.setTimeout(() => {
+        label.textContent = original;
+      }, 1500);
+    });
+  });
+</script>
+
+<style>
+  @layer starlight.core {
+    h1 {
+      margin-top: 1rem;
+      font-size: var(--sl-text-h1);
+      line-height: var(--sl-line-height-headings);
+      font-weight: 600;
+      color: var(--sl-color-white);
+    }
+  }
+
+  .copy-page-button {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    margin-top: 0.75rem;
+    padding: 0.4rem 0.75rem;
+    font-family: inherit;
+    font-size: 0.8125rem;
+    font-weight: 500;
+    color: var(--sl-color-gray-2);
+    background: transparent;
+    border: 0.5px solid var(--sl-color-hairline-shade);
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background-color 0.15s ease, color 0.15s ease;
+  }
+
+  .copy-page-button:hover {
+    color: var(--sl-color-white);
+    background-color: var(--sl-color-accent-low);
+  }
+
+  .copy-page-button svg {
+    width: 14px;
+    height: 14px;
+  }
+</style>

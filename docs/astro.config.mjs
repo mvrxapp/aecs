@@ -42,6 +42,9 @@ export default defineConfig({
           ],
         },
       ],
+      components: {
+        PageTitle: "./src/components/PageTitle.astro",
+      },
       customCss: ["./src/styles/custom.css"],
       pagination: false,
       expressiveCode: {
