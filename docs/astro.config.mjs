@@ -44,6 +44,17 @@ export default defineConfig({
       ],
       customCss: ["./src/styles/custom.css"],
       pagination: false,
+      expressiveCode: {
+        styleOverrides: {
+          borderRadius: "8px",
+          codeFontFamily: "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace",
+          frames: {
+            editorBackground: "#000000",
+            terminalBackground: "#000000",
+          },
+        },
+        themes: ["material-theme-darker", "material-theme-lighter"],
+      },
     }),
   ],
 });
