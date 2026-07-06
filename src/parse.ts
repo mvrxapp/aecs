@@ -3,6 +3,7 @@ import PostalMime, {
   type Attachment as PostalAttachment,
   type Email as PostalEmail,
 } from "postal-mime";
+import { buildAttachmentContext } from "./attachments.js";
 import { htmlToText, makeForAI, normalizeText, stripQuotedChains, stripSignature } from "./content.js";
 import {
   generatedMessageId,
@@ -107,6 +108,14 @@ export async function parse(source: EmailSource, options: ParseOptions = {}): Pr
           message: error instanceof Error ? error.message : String(error),
         });
       }
+    }
+  }
+
+  if (options.attachmentsInForAI) {
+    const attachmentContext = buildAttachmentContext(email.attachments, options.attachmentsForAIOptions);
+    if (attachmentContext) {
+      email.content.forAI =
+        email.content.forAI !== null ? `${email.content.forAI}\n\n${attachmentContext}` : attachmentContext;
     }
   }
 

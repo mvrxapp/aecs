@@ -62,6 +62,37 @@ export interface ParseOptions extends ForAIOptions {
   onAttachment?: AttachmentHandler;
   threadIdResolver?: (headers: RawHeaders) => string | Promise<string>;
   specVersion?: string;
+  /** Append aggregated attachment text (via extractedText) to content.forAI. Default: false. */
+  attachmentsInForAI?: boolean;
+  /** Options forwarded to buildAttachmentContext when attachmentsInForAI is true. */
+  attachmentsForAIOptions?: AttachmentsForAIOptions;
+}
+
+export interface AttachmentsForAIOptions {
+  /** Max characters per attachment. Default: 4_000. */
+  maxCharsPerAttachment?: number;
+
+  /** Max total characters across all attachments. Default: 16_000. */
+  maxTotalChars?: number;
+
+  /**
+   * Wrap each attachment's text block. Default: wrappers.xml("attachment").
+   * Set to null to disable wrapping.
+   */
+  wrapper?: ForAIWrapper | null;
+
+  /**
+   * Which content types to include. Accepts exact types or glob patterns.
+   * Default: include all attachments that have extractedText set.
+   * Example: ["application/pdf", "image/*", "audio/*"]
+   */
+  include?: string[];
+
+  /**
+   * Label format for each attachment block.
+   * Default: (att) => att.filename
+   */
+  label?: (att: Attachment) => string;
 }
 
 export interface ForAIOptions {

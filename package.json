@@ -1,6 +1,6 @@
 {
   "name": "@mvrx/aecs",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "AECS reference implementation: deterministically normalize raw RFC 5322/MIME email into AI-ready NormalizedEmail objects. Framework-agnostic, zero infrastructure dependencies.",
   "license": "MIT",
   "type": "module",
@@ -12,6 +12,10 @@
     ".": {
       "import": "./dist/index.js",
       "types": "./dist/index.d.ts"
+    },
+    "./attachments": {
+      "import": "./dist/attachments.js",
+      "types": "./dist/attachments.d.ts"
     },
     "./content": {
       "import": "./dist/content.js",
