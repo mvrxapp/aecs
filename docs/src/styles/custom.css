@@ -1,9 +1,18 @@
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap");
+
 :root {
   --sl-content-width: 54.5rem;
-  --sl-text-5xl: 2.5rem;
-  --sl-text-4xl: 2rem;
-  --sl-text-3xl: 1.75rem;
-  --sl-text-2xl: 1.375rem;
+  --sl-content-pad-x: 1rem;
+  --sl-nav-height: 3.5rem;
+  --sl-nav-pad-x: 1.5rem;
+  --sl-nav-pad-y: 0.625rem;
+  --sl-sidebar-pad-x: 1rem;
+
+  --sl-text-h1: 1.875rem;
+  --sl-text-h2: 1.375rem;
+  --sl-text-h3: 1.125rem;
+  --sl-text-h4: 1rem;
+  --sl-text-h5: 0.875rem;
 
   --sl-color-white: #ffffff;
   --sl-color-gray-1: #dcdcdc;
@@ -61,14 +70,25 @@
 }
 
 body {
-  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  -webkit-font-smoothing: antialiased;
 }
 
-.content a {
+.sl-markdown-content p {
+  line-height: 1.6;
+  color: var(--sl-color-gray-1);
+}
+
+.sl-markdown-content a {
+  color: var(--sl-color-text-accent);
+  font-weight: 500;
+  text-decoration: underline;
   text-underline-offset: 2px;
+  text-underline-position: from-font;
 }
 
-.content a:hover {
+.sl-markdown-content a:hover {
+  color: var(--sl-color-white);
   text-decoration-thickness: 2px;
 }
 
@@ -78,26 +98,67 @@ body {
 }
 
 .content h1 {
-  color: var(--sl-color-white);
+  color: var(--sl-color-gray-1);
+  line-height: 1.4;
 }
 
 .content h2 {
   color: var(--sl-color-white);
 }
 
+.content h3 {
+  color: var(--sl-color-white);
+}
+
+.content h4 {
+  color: var(--sl-color-white);
+}
+
+.sl-markdown-content .sl-heading-wrapper h1 {
+  line-height: 1.4;
+}
+
 .content code {
-  font-size: 0.85em;
+  font-size: 0.875em;
   border-radius: 6px;
+  font-family: "Menlo", "SF Mono", "Monaco", "Consolas", monospace;
 }
 
 .content :not(pre) > code {
   background: var(--sl-color-bg-inline-code);
-  padding: 0.15em 0.4em;
+  padding: 0.125em 0.4em;
+  color: var(--sl-color-white);
+}
+
+.sl-markdown-content pre {
+  border: 0.5px solid var(--sl-color-hairline);
+  border-radius: 8px;
+  padding: 0;
+  overflow: hidden;
+  background: linear-gradient(13deg, rgba(0, 0, 0, 0.4) 0%, rgba(0, 0, 0, 0.2) 100%);
+}
+
+.sl-markdown-content pre code {
+  font-size: 0.875rem;
+  line-height: 1.45;
+}
+
+.sl-markdown-content :not(h1,h2,h3,h4,h5,h6)+.sl-heading-wrapper {
+  margin-top: 1.25em;
+}
+
+.sl-markdown-content .sl-heading-wrapper h1 {
+  margin-block: 0;
+}
+
+.sl-markdown-content :not(h1,h2,h3,h4,h5,h6)+:is(h1,h2,h3,h4,h5,h6) {
+  margin-top: 1.25em;
 }
 
 .site-title span {
   font-weight: 600;
   letter-spacing: -0.02em;
+  font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
 }
 
 .site-title img {
@@ -132,7 +193,7 @@ details summary {
   border-spacing: 0;
   border-radius: 8px;
   overflow: hidden;
-  border: 1px solid var(--sl-color-hairline);
+  border: 0.5px solid var(--sl-color-hairline);
 }
 
 .sl-markdown-content th {
@@ -142,4 +203,24 @@ details summary {
 .sl-markdown-content td,
 .sl-markdown-content th {
   border-color: var(--sl-color-hairline);
+}
+
+.sl-markdown-content blockquote {
+  border-inline-start: 2px solid var(--sl-color-gray-4);
+  color: var(--sl-color-gray-2);
+  padding-inline-start: 1rem;
+}
+
+.sl-markdown-content ol,
+.sl-markdown-content ul {
+  line-height: 1.6;
+  color: var(--sl-color-gray-1);
+}
+
+.sl-markdown-content li {
+  line-height: 1.6;
+}
+
+.expressive-code {
+  margin-block: 1.25rem;
 }
