@@ -1,3 +1,4 @@
+export * from "./attachments.js";
 export * from "./content.js";
 export * from "./parse.js";
 export * from "./thread.js";
