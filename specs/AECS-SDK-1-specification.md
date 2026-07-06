@@ -22,7 +22,7 @@
 > `sendEmail()` ([§3.5](/aecs/specs/aecs-sdk-1/03-core-api/#35-emailtransport)–[3.6](/aecs/specs/aecs-sdk-1/03-core-api/#36-sendemailmessage-transport)), AI provider connectors ([§6](/aecs/specs/aecs-sdk-1/06-ai-provider-interface/)), deterministic and
 > AI-powered analysis tools ([§7](/aecs/specs/aecs-sdk-1/07-ai-tools-analysis/)), AI compose ([§8](/aecs/specs/aecs-sdk-1/08-ai-compose-writing-surfaces/)), attachment processors and the
 > attachment-to-LLM aggregation helpers ([§9.3](/aecs/specs/aecs-sdk-1/09-attachment-handling/#93-built-in-cf-processor--store-to-r2)–[9.8](/aecs/specs/aecs-sdk-1/09-attachment-handling/#98-async-extraction-large-files-via-queue)), the rules engine ([§15](/aecs/specs/aecs-sdk-1/15-rules-engine/)), the
-> real-time `UserHub`/SSE hub ([§16](/aecs/specs/aecs-sdk-1/16-real-time-events-userhub/)), and EAS/MCP/hosted-service surfaces. These
+> real-time `UserRelay`/SSE relay ([§16](/aecs/specs/aecs-sdk-1/16-real-time-events-userhub/)), and EAS/MCP/hosted-service surfaces. These
 > MUST be implemented through the public SDK surface described here rather than
 > bypassed in commercial code once built. Sections below that specify a roadmap
 > module carry a `Status: Roadmap` banner.
@@ -57,7 +57,7 @@ pnpm add @mvrx/mail
 ### 2.2 Cloudflare Workers — Full Setup
 
 > **Note:** this shows the full target setup. Today only the parse core is implemented —
-> the bindings below for storage (`DB`, `BLOBS`), outbound send (`EMAIL`), AI, the hub,
+> the bindings below for storage (`DB`, `BLOBS`), outbound send (`EMAIL`), AI, the relay,
 > and credential caching serve roadmap modules (see the Implementation Status note above).
 
 The SDK integrates natively with every Cloudflare service used in an email platform. Configure `wrangler.jsonc` with the bindings you need:
@@ -83,7 +83,7 @@ The SDK integrates natively with every Cloudflare service used in an email platf
 
   // Real-time SSE fan-out — see §16.4 for the cost caveat vs. WebSocket hibernation
   "durable_objects": {
-    "bindings": [{ "name": "HUB", "class_name": "UserHub" }]
+    "bindings": [{ "name": "RELAY", "class_name": "UserRelay" }]
   },
 
   // Workers AI — for built-in compose + classify tools
@@ -105,7 +105,7 @@ The SDK integrates natively with every Cloudflare service used in an email platf
 | `DB` | Thread/message persistence via built-in D1 helpers |
 | `BLOBS` | Raw email archival, attachment storage, sent-copy archival |
 | `CACHE` | EAS credential caching, hot-path lookups |
-| `HUB` | Real-time `new_message` / `rule_fired` events to connected clients |
+| `RELAY` | Real-time `new_message` / `rule_fired` events to connected clients |
 | `AI` | Workers AI provider — classify, summarise, draft, improve |
 | `CLASSIFY_Q` | Async spam/category classification without blocking ingest |
 
@@ -1178,7 +1178,7 @@ export default {
         ).bind(extractedText, attachmentId).run();
 
         // Notify connected clients that extracted text is ready
-        await publishEvent(env.HUB, userId, {
+        await publishEvent(env.RELAY, userId, {
           type: "attachment_ready",
           payload: { messageId, attachmentId, extractedText: true },
         });
@@ -1373,7 +1373,7 @@ way `forAIMaxChars` ([§11.3](/aecs/specs/aecs-sdk-1/11-security-best-practices/
 
 > **Note:** examples below freely combine implemented core APIs (`parse`, `EmailThread`,
 > wrappers) with roadmap APIs (`d1Store`, `aiTools.*`, `compose.*`, `evaluateRules`,
-> `UserHub`); they illustrate the target developer experience, not current capability.
+> `UserRelay`); they illustrate the target developer experience, not current capability.
 
 ### 13.1 Parse, Store to D1 + R2
 
@@ -1747,14 +1747,14 @@ CREATE TABLE IF NOT EXISTS mvrx_rules (
 
 ---
 
-## 16. Real-time Events (UserHub)
+## 16. Real-time Events (UserRelay)
 
 > **Status: Roadmap.** This section specifies a planned module; it is not yet implemented in `@mvrx/mail`.
 
-The `UserHub` Durable Object fans real-time events to connected browser clients via SSE. Each user has one `UserHub` instance keyed by their user ID.
+The `UserRelay` Durable Object fans real-time events to connected browser clients via SSE. Each user has one `UserRelay` instance keyed by their user ID.
 
 `userId` is opaque to the SDK — it's whatever string key your app uses to route events to
-the right `UserHub` instance (matches `NotificationBus.publish(userId, event)` in the
+the right `UserRelay` instance (matches `NotificationBus.publish(userId, event)` in the
 adapters interface). The SDK has no concept of accounts, mailbox ownership, or multi-tenancy;
 resolving "which user(s) should be notified about this inbound message" is an application
 concern. For the simplest case — one mailbox per user — the recipient address is a
@@ -1765,14 +1765,14 @@ mailbox-to-userIds lookup, since one inbound message may need to fan out to seve
 
 ```typescript
 // src/index.ts
-export { UserHub } from "@mvrx/mail/hub";
+export { UserRelay } from "@mvrx/mail/relay";
 
 export default {
   async fetch(req: Request, env: Env) {
     // Mount the SSE endpoint for browser clients
     const url = new URL(req.url);
-    if (url.pathname === "/hub") {
-      return hubRouter(req, env.HUB, getUserId(req));
+    if (url.pathname === "/relay") {
+      return relayRouter(req, env.RELAY, getUserId(req));
     }
     // ... rest of your router
   },
@@ -1786,7 +1786,7 @@ export default {
     const userId = message.to;
 
     // Publish to all connected clients for this user
-    await publishEvent(env.HUB, userId, {
+    await publishEvent(env.RELAY, userId, {
       type: "new_message",
       payload: {
         messageId: email.messageId,
@@ -1830,22 +1830,22 @@ type MailEvent =
     };
 ```
 
-### 16.3 Hub API
+### 16.3 Relay API
 
 ```typescript
-import { publishEvent, hubRouter } from "@mvrx/mail/hub";
+import { publishEvent, relayRouter } from "@mvrx/mail/relay";
 
 // Publish from any Worker handler
 function publishEvent(
-  hub:    DurableObjectNamespace,
+  relay:    DurableObjectNamespace,
   userId: string,
   event:  MailEvent
 ): Promise<void>
 
 // Mount as an SSE endpoint — handles connection upgrade + keep-alive
-function hubRouter(
+function relayRouter(
   req:    Request,
-  hub:    DurableObjectNamespace,
+  relay:    DurableObjectNamespace,
   userId: string
 ): Promise<Response>
 ```
@@ -1853,7 +1853,7 @@ function hubRouter(
 ### 16.4 Browser Client
 
 ```typescript
-const events = new EventSource("/hub");
+const events = new EventSource("/relay");
 
 events.addEventListener("new_message", (e) => {
   const { messageId, from, subject } = JSON.parse(e.data);
@@ -1866,23 +1866,23 @@ events.addEventListener("rule_fired", (e) => {
 });
 ```
 
-**Cost note:** the reference `hubRouter()` holds an SSE connection (a long-lived
+**Cost note:** the reference `relayRouter()` holds an SSE connection (a long-lived
 `ReadableStream` response) open per connected client, not a WebSocket. This is *not* the
 same as Cloudflare's [WebSocket Hibernation API](https://developers.cloudflare.com/durable-objects/api/websockets/)
 — hibernation lets a Durable Object evict an idle **WebSocket** connection from memory
 while keeping it open at the edge, waking only on a new frame. A plain SSE stream has no
-equivalent: the `UserHub` instance holding it open stays active, and billed, for as long as
+equivalent: the `UserRelay` instance holding it open stays active, and billed, for as long as
 a client is connected, not just when an event is published. If per-connection duration cost
-matters at your scale, implement `NotificationBus` (the interface `UserHub` satisfies) over
+matters at your scale, implement `NotificationBus` (the interface `UserRelay` satisfies) over
 WebSockets with hibernation instead — nothing else in the SDK depends on SSE specifically.
 
 ### 16.5 Delivery Guarantees & Reconnection
 
-The reference `hubRouter()`/`UserHub` is **fire-and-forget, at-most-once, no replay**:
+The reference `relayRouter()`/`UserRelay` is **fire-and-forget, at-most-once, no replay**:
 
 - If no client is connected when `publishEvent()` is called, the event is dropped — it is
   not queued or persisted for a client that connects later.
-- `hubRouter()` does not assign event IDs and does not honor the SSE `Last-Event-ID` request
+- `relayRouter()` does not assign event IDs and does not honor the SSE `Last-Event-ID` request
   header, even though the browser's native `EventSource` sends it automatically on
   reconnect. A reconnecting client gets only events published after the new connection is
   established — nothing published during the gap.
@@ -1893,7 +1893,7 @@ The reference `hubRouter()`/`UserHub` is **fire-and-forget, at-most-once, no rep
   never rely on the event stream alone for correctness, only for low-latency "something
   changed, go refetch" signaling.
 - Implementations that need at-least-once delivery or replay (e.g. a `NotificationBus` swap
-  to a durable queue) MAY add it; `hubRouter()`/`UserHub` is the reference implementation of
+  to a durable queue) MAY add it; `relayRouter()`/`UserRelay` is the reference implementation of
   the interface, not a delivery-guarantee contract of it.
 
 ---
@@ -1908,7 +1908,7 @@ The reference `hubRouter()`/`UserHub` is **fire-and-forget, at-most-once, no rep
 > wrapper exports listed under `@mvrx/mail` below actually exist. `sendEmail`, `d1Init`,
 > `d1Store`, `getThread`, `getMessage`, `listMessages`, `evaluateRules`, `Rule`, `Action`,
 > `Condition`, `OutboundEmail`, and every other subpath below (`/providers`, `/transports`,
-> `/hub`, `/tools`, `/ai-tools`, `/compose`, `/attachments`) are roadmap — see the
+> `/relay`, `/tools`, `/ai-tools`, `/compose`, `/attachments`) are roadmap — see the
 > Implementation Status note near the top of this document.
 
 ```
@@ -1921,7 +1921,7 @@ The reference `hubRouter()`/`UserHub` is **fire-and-forget, at-most-once, no rep
 
 @mvrx/mail/transports   — cfTransport, smtpTransport, EmailTransport (interface)
 
-@mvrx/mail/hub          — UserHub (DO class), publishEvent(), hubRouter(), MailEvent
+@mvrx/mail/relay          — UserRelay (DO class), publishEvent(), relayRouter(), MailEvent
 
 @mvrx/mail/tools        — deterministic tools: extractAddresses, detectIntent,
                           requiresReply, extractDates, extractLinks

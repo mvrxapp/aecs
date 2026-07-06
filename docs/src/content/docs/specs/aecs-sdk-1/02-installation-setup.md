@@ -14,7 +14,7 @@ pnpm add @mvrx/mail
 ### 2.2 Cloudflare Workers — Full Setup
 
 > **Note:** this shows the full target setup. Today only the parse core is implemented —
-> the bindings below for storage (`DB`, `BLOBS`), outbound send (`EMAIL`), AI, the hub,
+> the bindings below for storage (`DB`, `BLOBS`), outbound send (`EMAIL`), AI, the relay,
 > and credential caching serve roadmap modules (see the Implementation Status note above).
 
 The SDK integrates natively with every Cloudflare service used in an email platform. Configure `wrangler.jsonc` with the bindings you need:
@@ -40,7 +40,7 @@ The SDK integrates natively with every Cloudflare service used in an email platf
 
   // Real-time SSE fan-out — see §16.4 for the cost caveat vs. WebSocket hibernation
   "durable_objects": {
-    "bindings": [{ "name": "HUB", "class_name": "UserHub" }]
+    "bindings": [{ "name": "RELAY", "class_name": "UserRelay" }]
   },
 
   // Workers AI — for built-in compose + classify tools
@@ -62,7 +62,7 @@ The SDK integrates natively with every Cloudflare service used in an email platf
 | `DB` | Thread/message persistence via built-in D1 helpers |
 | `BLOBS` | Raw email archival, attachment storage, sent-copy archival |
 | `CACHE` | EAS credential caching, hot-path lookups |
-| `HUB` | Real-time `new_message` / `rule_fired` events to connected clients |
+| `RELAY` | Real-time `new_message` / `rule_fired` events to connected clients |
 | `AI` | Workers AI provider — classify, summarise, draft, improve |
 | `CLASSIFY_Q` | Async spam/category classification without blocking ingest |
 

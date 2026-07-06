@@ -5,7 +5,7 @@ title: "13. Examples"
 
 > **Note:** examples below freely combine implemented core APIs (`parse`, `EmailThread`,
 > wrappers) with roadmap APIs (`d1Store`, `aiTools.*`, `compose.*`, `evaluateRules`,
-> `UserHub`); they illustrate the target developer experience, not current capability.
+> `UserRelay`); they illustrate the target developer experience, not current capability.
 
 ### 13.1 Parse, Store to D1 + R2
 

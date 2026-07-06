@@ -286,7 +286,7 @@ export default {
         ).bind(extractedText, attachmentId).run();
 
         // Notify connected clients that extracted text is ready
-        await publishEvent(env.HUB, userId, {
+        await publishEvent(env.RELAY, userId, {
           type: "attachment_ready",
           payload: { messageId, attachmentId, extractedText: true },
         });
