@@ -2,7 +2,7 @@
 
 :root {
   --sl-content-width: 54.5rem;
-  --sl-content-pad-x: 1rem;
+  --sl-content-pad-x: 2.5rem;
   --sl-nav-height: 3.5rem;
   --sl-nav-pad-x: 1.5rem;
   --sl-nav-pad-y: 0.625rem;
@@ -23,18 +23,18 @@
   --sl-color-gray-6: #141414;
   --sl-color-black: #000000;
 
-  --sl-color-accent-low: #2b2b2b;
-  --sl-color-accent: #ffffff;
-  --sl-color-accent-high: #dcdcdc;
+  --sl-color-accent-low: rgba(45, 212, 191, 0.14);
+  --sl-color-accent: #2dd4bf;
+  --sl-color-accent-high: #99f6e4;
 
   --sl-color-text: #dcdcdc;
-  --sl-color-text-accent: #ffffff;
+  --sl-color-text-accent: var(--sl-color-accent);
   --sl-color-text-invert: #000000;
   --sl-color-bg: #000000;
   --sl-color-bg-nav: #000000;
   --sl-color-bg-sidebar: #000000;
   --sl-color-bg-inline-code: rgba(255, 255, 255, 0.12);
-  --sl-color-bg-accent: #ffffff;
+  --sl-color-bg-accent: var(--sl-color-accent);
   --sl-color-hairline-light: rgba(255, 255, 255, 0.06);
   --sl-color-hairline: rgba(255, 255, 255, 0.08);
   --sl-color-hairline-shade: rgba(255, 255, 255, 0.1);
@@ -51,18 +51,18 @@
   --sl-color-gray-6: #e5e5e5;
   --sl-color-black: #ffffff;
 
-  --sl-color-accent-low: #e5e5e5;
-  --sl-color-accent: #000000;
-  --sl-color-accent-high: #1a1a1a;
+  --sl-color-accent-low: rgba(15, 118, 110, 0.1);
+  --sl-color-accent: #0f766e;
+  --sl-color-accent-high: #115e59;
 
   --sl-color-text: #1a1a1a;
-  --sl-color-text-accent: #000000;
+  --sl-color-text-accent: var(--sl-color-accent);
   --sl-color-text-invert: #ffffff;
   --sl-color-bg: #ffffff;
   --sl-color-bg-nav: #ffffff;
   --sl-color-bg-sidebar: #ffffff;
   --sl-color-bg-inline-code: rgba(0, 0, 0, 0.08);
-  --sl-color-bg-accent: #000000;
+  --sl-color-bg-accent: var(--sl-color-accent);
   --sl-color-hairline-light: rgba(0, 0, 0, 0.06);
   --sl-color-hairline: rgba(0, 0, 0, 0.1);
   --sl-color-hairline-shade: rgba(0, 0, 0, 0.15);
@@ -88,7 +88,7 @@ body {
 }
 
 .sl-markdown-content a:hover {
-  color: var(--sl-color-white);
+  color: var(--sl-color-accent-high);
   text-decoration-thickness: 2px;
 }
 
@@ -194,7 +194,7 @@ details summary {
 
 .sidebar-pane li a[aria-current="page"] {
   background-color: var(--sl-color-accent-low);
-  color: var(--sl-color-white);
+  color: var(--sl-color-accent);
   border-radius: 6px;
   font-weight: 500;
 }
