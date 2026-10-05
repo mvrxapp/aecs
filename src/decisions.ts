@@ -309,18 +309,32 @@ export interface EmailDecisionOptions {
 /**
  * Build a System One `state` from a NormalizedEmail. The body is content.forAI,
  * so whatever wrapper parse() applied (untrusted-content markers) is preserved.
+ *
+ * Accepts any AECS-1-conformant object, not only parse() output: every field except
+ * messageId and threadId may be omitted or null (AECS-1 §10), for example after a round
+ * trip through storage.
  */
 export function emailToDecisionState(email: NormalizedEmail, options: EmailDecisionOptions = {}): DecisionValue {
+  const e = email as Partial<NormalizedEmail>;
+  const metadata: Partial<NormalizedEmail["metadata"]> = e.metadata ?? {};
+  const content: Partial<NormalizedEmail["content"]> = e.content ?? {};
+  const attachments = Array.isArray(e.attachments) ? e.attachments.filter(isRecord) : [];
+  const emailsOf = (list: unknown) =>
+    Array.isArray(list) ? list.filter(isRecord).map((a) => a.email).filter((v): v is string => typeof v === "string") : [];
+
   const state: { [key: string]: DecisionValue } = {};
   if (options.includeMetadata ?? true) {
-    state.from = email.metadata.from.email;
-    state.to = email.metadata.to.map((a) => a.email);
-    state.subject = email.metadata.subject;
-    state.date = email.metadata.date;
+    state.from = isRecord(metadata.from) && typeof metadata.from.email === "string" ? metadata.from.email : null;
+    state.to = emailsOf(metadata.to);
+    state.subject = metadata.subject ?? null;
+    state.date = metadata.date ?? null;
   }
-  state.body = email.content.forAI ?? email.content.clean ?? "";
-  if ((options.includeAttachments ?? true) && email.attachments.length > 0) {
-    state.attachments = email.attachments.map((a) => ({ filename: a.filename, contentType: a.contentType }));
+  state.body = content.forAI ?? content.clean ?? content.text ?? "";
+  if ((options.includeAttachments ?? true) && attachments.length > 0) {
+    state.attachments = attachments.map((a) => ({
+      filename: typeof a.filename === "string" ? a.filename : null,
+      contentType: typeof a.contentType === "string" ? a.contentType : null,
+    }));
   }
   return state;
 }
