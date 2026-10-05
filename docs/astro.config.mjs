@@ -25,13 +25,25 @@ export default defineConfig({
           label: "Specification",
           items: [
             {
-              label: "AECS-1 (v1.0.0, Final)",
+              label: "AECS-1 (v1.1.1, Final)",
               items: [{ autogenerate: { directory: "specs/aecs-1" } }],
             },
             {
-              label: "AECS-SDK-1 (v0.3.0-draft)",
+              label: "AECS-SDK-1 (v0.5.0-draft)",
               items: [{ autogenerate: { directory: "specs/aecs-sdk-1" } }],
             },
+          ],
+        },
+        {
+          label: "Storage",
+          items: [
+            { label: "Overview", link: "/storage/" },
+            { label: "Cloudflare (D1, R2, Vectorize)", link: "/storage/cloudflare/" },
+            { label: "SQLite", link: "/storage/sqlite/" },
+            { label: "PostgreSQL", link: "/storage/postgresql/" },
+            { label: "MySQL", link: "/storage/mysql/" },
+            { label: "MongoDB", link: "/storage/mongodb/" },
+            { label: "DynamoDB", link: "/storage/dynamodb/" },
           ],
         },
         {

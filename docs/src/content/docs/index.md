@@ -14,8 +14,12 @@ a framework-agnostic, MIT-licensed reference implementation.
 
 ## Specification
 
-- [**AECS-1**](/aecs/specs/aecs-1/00-overview/) (v1.1.0, Final) — the normative document
-- [**AECS-SDK-1**](/aecs/specs/aecs-sdk-1/00-overview/) (v0.4.0-draft) — the target SDK surface for implementations
+- [**AECS-1**](/aecs/specs/aecs-1/00-overview/) (v1.1.1, Final) — the normative document
+- [**AECS-SDK-1**](/aecs/specs/aecs-sdk-1/00-overview/) (v0.5.0-draft) — the target SDK surface for implementations
+
+## Storage
+
+- [Storing AECS email](/aecs/storage/) — tables, keys and indexes for small payloads and fast retrieval, with guides for Cloudflare, SQLite, PostgreSQL, MySQL, MongoDB and DynamoDB
 
 ## Reference
 

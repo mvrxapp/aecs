@@ -18,3 +18,5 @@ fixtures in [`specs/conformance/content/`](./conformance/content/).
 
 - GitHub: [github.com/mvrxapp/mail](https://github.com/mvrxapp/mail)
 - npm: [`@mvrx/mail`](https://npmjs.com/package/@mvrx/mail)
+
+---

@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://mvrx.app/schema/aecs-1/normalized-email.schema.json",
   "title": "NormalizedEmail",
-  "description": "Machine-readable schema for AECS-1 v1.1.0 NormalizedEmail (see ../AECS-1-ai-email-consumption.md §3-§4). Conformance convention (§10): only messageId/threadId are required anywhere in this document. Every other property MAY be omitted; properties whose prose type is documented as 'X | null' MAY additionally hold an explicit null instead of being omitted — both mean 'not populated' and a conformant consumer MUST treat them identically. x_-prefixed custom fields are permitted at any level per §9 and are the only additional properties this schema accepts beyond what's listed.",
+  "description": "Machine-readable schema for AECS-1 v1.1.1 NormalizedEmail (see ../AECS-1-ai-email-consumption.md §3-§4). Conformance convention (§10): only messageId/threadId are required anywhere in this document. Every other property MAY be omitted; properties whose prose type is documented as 'X | null' MAY additionally hold an explicit null instead of being omitted — both mean 'not populated' and a conformant consumer MUST treat them identically. x_-prefixed custom fields are permitted at any level per §9 and are the only additional properties this schema accepts beyond what's listed.",
   "type": "object",
   "required": ["messageId", "threadId"],
   "additionalProperties": false,

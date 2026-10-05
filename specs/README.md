@@ -5,7 +5,7 @@ not just internal implementation docs. Implementations in `@mvrx/*` packages fol
 
 | Spec | Status | Description |
 |---|---|---|
-| [AECS-1](./AECS-1-ai-email-consumption.md) | **1.1.0 Final** | AI Email Consumption Specification — NormalizedEmail schema |
+| [AECS-1](./AECS-1-ai-email-consumption.md) | **1.1.1 Final** | AI Email Consumption Specification — NormalizedEmail schema |
 | [AECS-SDK-1](./AECS-SDK-1-specification.md) | Draft | AECS SDK — TypeScript reference implementation spec |
 
 ## Machine-checkable artifacts
