@@ -1,0 +1,14 @@
+{
+  "description": "Bottom-posted reply: attribution and quoted history first, the sender's answer last. The answer MUST survive.",
+  "specSection": "AECS-1 §4.3.1",
+  "input": {
+    "text": "On Mon, 29 Jun 2026 at 09:00, Alice <alice@example.com> wrote:\n> Can you send the signed contract by Friday?\n> Legal needs it before the board meeting.\n\nYes, I will send the signed contract on Thursday."
+  },
+  "expected": {
+    "nonEmpty": true,
+    "mustContain": [
+      "Yes, I will send the signed contract on Thursday."
+    ],
+    "mustNotContain": []
+  }
+}

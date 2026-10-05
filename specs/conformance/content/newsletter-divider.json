@@ -1,0 +1,16 @@
+{
+  "description": "A newsletter uses an underscore line as a section divider. A divider on its own is not quoted history, so the content below it MUST survive.",
+  "specSection": "AECS-1 §4.3.1",
+  "input": {
+    "text": "Weekly product news\n\n_____\n\nPrice change: the Pro plan drops to $12 per month from 1 November.\n\n_____\n\nWebinar: building with typed decision models, 12 November."
+  },
+  "expected": {
+    "nonEmpty": true,
+    "mustContain": [
+      "Weekly product news",
+      "Price change: the Pro plan drops to $12 per month from 1 November.",
+      "Webinar: building with typed decision models, 12 November."
+    ],
+    "mustNotContain": []
+  }
+}

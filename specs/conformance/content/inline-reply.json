@@ -1,0 +1,16 @@
+{
+  "description": "Inline replies: the sender answers below each quoted question. Both answers MUST survive; a prefix-truncating cleaner keeps only the first line.",
+  "specSection": "AECS-1 §4.3.1",
+  "input": {
+    "text": "My answers are below.\n> Is the design approved?\nNo, the design is not approved.\n> Can we deploy Friday?\nDo not deploy before Monday."
+  },
+  "expected": {
+    "nonEmpty": true,
+    "mustContain": [
+      "My answers are below.",
+      "No, the design is not approved.",
+      "Do not deploy before Monday."
+    ],
+    "mustNotContain": []
+  }
+}

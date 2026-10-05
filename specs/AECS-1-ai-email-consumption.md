@@ -1,8 +1,8 @@
 # AECS-1: AI Email Consumption Specification
 
-**Version:** 1.0.0  
+**Version:** 1.1.0  
 **Status:** Final  
-**Date:** 2026-07-03
+**Date:** 2026-10-05
 **Authors:** MVRX Group  
 **License:** CC0 1.0 (public domain)
 
@@ -68,6 +68,7 @@ choice for sync — AECS-1 is complementary, not a competitor, at the normalizat
 - **Flexible by design.** All fields except `messageId` and `threadId` are optional. Implementations populate what they can; unpopulated fields SHOULD be explicit `null` (consumers MUST accept omission too — [§10](/aecs/specs/aecs-1/12-conformance/)).
 - **Non-destructive.** The original raw message is preserved as an atomic field when included. Normalization layers are additions, not replacements.
 - **Multiple content levels.** Consumers choose the level of processing that suits their use case — from raw RFC 5322 bytes to a clean, LLM-ready string.
+- **Content-preserving cleanup.** Cleaner levels remove quoted history and signatures, never the sender's own words. A shorter body that has lost the sender's answer is a defect, not a saving ([§4.3.1](/aecs/specs/aecs-1/06-field-definitions/#431-content-preservation)).
 - **Stable threading.** `threadId` is calculated deterministically from standard email headers. It must be identical for all messages in the same conversation, across implementations.
 - **UTC everywhere.** All timestamps are Unix epoch integers (seconds). ISO 8601 strings, where provided, are always UTC.
 
@@ -117,7 +118,8 @@ choice for sync — AECS-1 is complementary, not a competitor, at the normalizat
 
   "processing": {
     "processedAt": "string",
-    "specVersion": "string"
+    "specVersion": "string",
+    "cleanFallback": "boolean (optional)"
   }
 }
 ```
@@ -187,13 +189,38 @@ The content object provides the same message body at six processing levels. Impl
 | Field | Description |
 |---|---|
 | `content.rawFull` | Complete original RFC 5322 message — all headers, MIME parts, encodings, exactly as received. Suitable for archival and re-parsing. |
-| `content.raw` | The latest message body only. Quoted reply history is stripped at the MIME level. Headers are excluded. |
+| `content.raw` | The decoded message body, headers excluded. Quoted reply history and signatures are **retained**; no cleanup is applied. This is the bounded, full-body fallback for consumers that cannot use `rawFull`. |
 | `content.html` | HTML rendition of the latest message content. `null` if the message has no HTML part. |
 | `content.text` | Plain text rendition of the latest message content, decoded from any transfer encoding. |
-| `content.clean` | Plain text with email signatures and quoted reply chains removed using heuristic detection. May be imperfect. |
-| `content.forAI` | Derived from `clean`. Additionally: whitespace normalised, inline image references removed, forwarded-message headers collapsed to a single summary line. This is the field AI consumers SHOULD use as their primary input. |
+| `content.clean` | Plain text with quoted reply history and email signatures removed using heuristic detection, subject to the preservation rules in [§4.3.1](/aecs/specs/aecs-1/06-field-definitions/#431-content-preservation). Quoted lines directly above an authored line MAY be kept as context. |
+| `content.forAI` | Derived from `clean`. Additionally: whitespace normalised, inline image references removed, forwarded-message headers collapsed to a single summary line. It MUST NOT remove authored lines that `clean` kept, except by truncation to a configured limit, which MUST be marked in the output (for example `[truncated]`). This is the field AI consumers SHOULD use as their primary input. |
 
 Consumers preferring minimal context window usage should use `content.forAI`. Consumers requiring fidelity to the original should use `content.rawFull`.
+
+`clean` and `forAI` are lossy by design: they trade context for size, and their heuristics can be wrong. A consumer that acts on the body (classifying, routing, replying or deciding) SHOULD keep `text` or `raw` available as a fallback, and SHOULD use it when `processing.cleanFallback` is `true` or when `forAI` is much shorter than the task needs. A smaller `forAI` is only a saving if it still holds the evidence the task depends on.
+
+#### 4.3.1 Content Preservation
+
+These rules define what cleanup may remove when producing `clean` from `text`. They apply to every implementation that populates `clean`, whatever heuristics it uses. Each line of `text` falls into one of these kinds:
+
+| Kind | Definition |
+|---|---|
+| Quoted line | A line whose first non-whitespace character is `>`. |
+| Attribution line | A line that introduces quoted text, such as `On <date>, <name> wrote:`, including that attribution when the sending client wraps it onto a second line ending in `wrote:`. |
+| Unprefixed history | Everything from an unprefixed history marker to the end of `text`. The markers are an `Original Message` separator line (for example `-----Original Message-----`), or a reply/forward header block: a line starting `From:` followed within five lines by a line starting `Sent:`, `Date:`, `To:` or `Subject:`. A divider line directly above such a header block belongs to the history. A header block directly below a forwarded-message marker (for example `---------- Forwarded message ---------` or `Begin forwarded message:`) is **not** history: it introduces forwarded content, which is authored content for this rule set. |
+| Signature block | A short trailing block that starts at a signature marker: the RFC 3676 delimiter `-- `, a mobile-client line such as `Sent from my iPhone`, a confidentiality disclaimer, or a closing salutation. |
+| Authored line | Any non-blank line that is none of the above. |
+
+Rules:
+
+1. Cleanup MUST NOT remove an authored line. This includes authored lines that appear below or between quoted lines (bottom-posted and inline replies).
+2. Cleanup MAY remove attribution lines, unprefixed history, and quoted lines that follow the last authored line.
+3. Quoted lines that come before an authored line SHOULD be kept as context, because an answer like "No." means nothing without its question. An implementation MAY bound this context (the reference implementation keeps the last three quoted lines above each authored line), and MUST replace lines it drops with a visible marker such as `> [5 quoted lines omitted]`.
+4. A divider line on its own (a line made only of `_`, `-`, `=`, `*` or similar characters) MUST NOT be treated as the start of quoted history. Newsletters and notifications use dividers between sections.
+5. A signature block MUST be trailing. An implementation SHOULD NOT treat a block longer than about 10 non-empty lines (15 for a confidentiality disclaimer) as a signature: when more text follows a marker than that, the marker is a lookalike and the text is kept.
+6. If `text` is non-empty and cleanup would leave `clean` empty, `clean` MUST instead equal `text`, and `processing.cleanFallback` SHOULD be set to `true`.
+
+These rules are tested by the content-preservation fixtures in [`specs/conformance/content/`](./conformance/content/) ([§10](/aecs/specs/aecs-1/12-conformance/)).
 
 ---
 
@@ -244,7 +271,8 @@ Attachment binary content is not included in `NormalizedEmail`. Implementations 
 | Field | Type | Description |
 |---|---|---|
 | `processing.processedAt` | string | ISO 8601 UTC timestamp of when this normalization was produced. |
-| `processing.specVersion` | string | The AECS version used (e.g. `"1.0"`). |
+| `processing.specVersion` | string | The AECS version used (e.g. `"1.1"`). |
+| `processing.cleanFallback` | boolean | Optional. `true` when cleanup would have emptied a non-empty body, so `content.clean` holds `text` instead ([§4.3.1](/aecs/specs/aecs-1/06-field-definitions/#431-content-preservation) rule 6). Omitted or `false` otherwise. |
 
 ---
 
@@ -352,7 +380,7 @@ This specification defines data structure only. It does not mandate sanitization
 **Implementers and consumers should note:**
 
 - All email content — including `subject`, sender names, and body fields at every level — originates from an untrusted external source.
-- The `forAI` field reduces noise but does not sanitize for prompt injection. An adversary can craft email content designed to manipulate an AI system that processes it as instructions.
+- The `forAI` field reduces noise but does not sanitize for prompt injection. Content that cleanup keeps for preservation ([§4.3.1](/aecs/specs/aecs-1/06-field-definitions/#431-content-preservation)), including quoted context and fallback bodies, is just as untrusted. An adversary can craft email content designed to manipulate an AI system that processes it as instructions.
 - Safe usage of any `content.*` field with an LLM is the responsibility of the consuming application.
 - Implementations are encouraged to offer an optional scanning layer and attach findings as metadata outside this core schema. This spec does not define that layer.
 - `content.rawFull` in particular MUST be treated as fully untrusted input if re-parsed downstream.
@@ -376,14 +404,15 @@ This specification follows semantic versioning (`MAJOR.MINOR.PATCH`).
 
 - Breaking changes to the `NormalizedEmail` schema increment the major version.
 - Additive, non-breaking changes increment the minor version.
-- The `processing.specVersion` field in each normalized object SHOULD record the major and minor version used (e.g. `"1.0"`).
+- The `processing.specVersion` field in each normalized object SHOULD record the major and minor version used (e.g. `"1.1"`).
 
-Current version: **1.0.0**
+Current version: **1.1.0**
 
 ### Release History
 
 | Version | Date | Notes |
 |---|---|---|
+| 1.1.0 | 2026-10-05 | Adds [§4.3.1](/aecs/specs/aecs-1/06-field-definitions/#431-content-preservation) (content preservation): cleanup MUST NOT remove authored lines, including bottom-posted and inline replies; divider lines are not quote boundaries; signature removal is limited to short trailing blocks; an empty cleanup result falls back to `text`. Adds optional `processing.cleanFallback`. Fixes the contradiction between §4.3 and Appendix A over `content.raw`, which retains quoted history. Adds §10 conformance points 8–9 and content-preservation fixtures. Implementations that keep only the text above the first quote marker were AECS-1.0-conformant and are not AECS-1.1-conformant. |
 | 1.0.0 | 2026-07-03 | First stable release. Adds [§4.1.1](/aecs/specs/aecs-1/06-field-definitions/#411-synthetic-messageid) (synthetic `messageId`), [§6.1](/aecs/specs/aecs-1/08-timestamps/#61-date-header-parsing) (`Date` parsing), and clarifies [§5.4](/aecs/specs/aecs-1/07-threading-algorithm/#54-encoding-for-the-fallback-hash-rule-4) fallback-hash inputs. |
 | 1.0.0-draft | 2026-06-29 | Initial public draft. |
 
@@ -424,12 +453,18 @@ only if it satisfies every point below:
 7. `content.rawFull`, if populated, is byte-faithful to the original message — conformance
    does not require populating it ([§2](/aecs/specs/aecs-1/04-core-principles/)'s "flexible by design"), but if present it MUST NOT be
    normalized, re-encoded, or otherwise altered from the source.
+8. `content.clean`, if populated, follows the preservation rules in [§4.3.1](/aecs/specs/aecs-1/06-field-definitions/#431-content-preservation): no authored line
+   removed, no divider treated as a quote boundary, and never empty when `text` is non-empty.
+   `content.forAI`, if populated, removes no authored line that `clean` kept, except by
+   marked truncation.
+9. `content.raw`, if populated, retains quoted reply history ([§4.3](/aecs/specs/aecs-1/06-field-definitions/#43-content)).
 
 A conformant implementation is NOT required to populate every `content.*` level ([§4.3](/aecs/specs/aecs-1/06-field-definitions/#43-content)
 already says implementations SHOULD populate what they're capable of, not MUST populate
 all) — the bar is that *whatever* is populated follows the rules above, not that everything
 is populated. See [`specs/conformance/`](./conformance/) for machine-checkable fixtures
-covering points 3–5, and [`specs/schema/normalized-email.schema.json`](./schema/normalized-email.schema.json)
+covering points 3–5 and 8 (`content/`: each fixture lists lines `clean` and `forAI` must keep
+or must drop), and [`specs/schema/normalized-email.schema.json`](./schema/normalized-email.schema.json)
 for a JSON Schema covering points 1, 2, and 6 (shape and nullability).
 
 ---
@@ -467,7 +502,7 @@ This example shows a reply message. Note how the content levels diverge as proce
   "attachments": [],
   "processing": {
     "processedAt": "2026-06-29T14:32:01Z",
-    "specVersion": "1.0"
+    "specVersion": "1.1"
   }
 }
 ```
@@ -493,7 +528,8 @@ of the thread would instead produce `thread.position: null` per [§4.4](/aecs/sp
 | `EmailThread` | `thread.position` assignment ([§4.4](/aecs/specs/aecs-1/06-field-definitions/#44-thread)) |
 
 Conformance tests in `packages/mail/test/core.test.mjs` run every fixture in
-[`specs/conformance/fixtures/`](./conformance/fixtures/).
+[`specs/conformance/fixtures/`](./conformance/fixtures/), and the content-preservation
+fixtures in [`specs/conformance/content/`](./conformance/content/).
 
 - GitHub: [github.com/mvrxapp/mail](https://github.com/mvrxapp/mail)
 - npm: [`@mvrx/mail`](https://npmjs.com/package/@mvrx/mail)

@@ -1,0 +1,18 @@
+{
+  "description": "Top-posted reply with Gmail-style attribution. Quoted history after the last authored line MUST be removed.",
+  "specSection": "AECS-1 §4.3.1",
+  "input": {
+    "text": "Thanks Alice, looks good to me.\n\nOn Sun, 29 Jun 2026 at 09:00, Alice <alice@example.com> wrote:\n> Hi Bob, here is the latest project update.\n> Everything is on track for Thursday."
+  },
+  "expected": {
+    "nonEmpty": true,
+    "mustContain": [
+      "Thanks Alice, looks good to me."
+    ],
+    "mustNotContain": [
+      "Hi Bob, here is the latest project update.",
+      "Everything is on track for Thursday.",
+      "wrote:"
+    ]
+  }
+}

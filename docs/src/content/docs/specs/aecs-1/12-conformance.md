@@ -25,12 +25,18 @@ only if it satisfies every point below:
 7. `content.rawFull`, if populated, is byte-faithful to the original message — conformance
    does not require populating it ([§2](/aecs/specs/aecs-1/04-core-principles/)'s "flexible by design"), but if present it MUST NOT be
    normalized, re-encoded, or otherwise altered from the source.
+8. `content.clean`, if populated, follows the preservation rules in [§4.3.1](/aecs/specs/aecs-1/06-field-definitions/#431-content-preservation): no authored line
+   removed, no divider treated as a quote boundary, and never empty when `text` is non-empty.
+   `content.forAI`, if populated, removes no authored line that `clean` kept, except by
+   marked truncation.
+9. `content.raw`, if populated, retains quoted reply history ([§4.3](/aecs/specs/aecs-1/06-field-definitions/#43-content)).
 
 A conformant implementation is NOT required to populate every `content.*` level ([§4.3](/aecs/specs/aecs-1/06-field-definitions/#43-content)
 already says implementations SHOULD populate what they're capable of, not MUST populate
 all) — the bar is that *whatever* is populated follows the rules above, not that everything
 is populated. See [`specs/conformance/`](./conformance/) for machine-checkable fixtures
-covering points 3–5, and [`specs/schema/normalized-email.schema.json`](./schema/normalized-email.schema.json)
+covering points 3–5 and 8 (`content/`: each fixture lists lines `clean` and `forAI` must keep
+or must drop), and [`specs/schema/normalized-email.schema.json`](./schema/normalized-email.schema.json)
 for a JSON Schema covering points 1, 2, and 6 (shape and nullability).
 
 ---

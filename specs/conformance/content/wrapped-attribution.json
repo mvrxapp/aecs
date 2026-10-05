@@ -1,0 +1,17 @@
+{
+  "description": "Attribution wrapped onto two lines by the sending client. Both attribution lines and the trailing quote MUST be removed.",
+  "specSection": "AECS-1 §4.3.1",
+  "input": {
+    "text": "Confirmed for 3pm.\n\nOn Sun, 29 Jun 2026 at 09:00, Alice Example\n<alice@example.com> wrote:\n> Can we meet at 3pm?"
+  },
+  "expected": {
+    "nonEmpty": true,
+    "mustContain": [
+      "Confirmed for 3pm."
+    ],
+    "mustNotContain": [
+      "<alice@example.com> wrote:",
+      "Can we meet at 3pm?"
+    ]
+  }
+}

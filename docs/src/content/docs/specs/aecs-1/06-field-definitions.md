@@ -64,13 +64,38 @@ The content object provides the same message body at six processing levels. Impl
 | Field | Description |
 |---|---|
 | `content.rawFull` | Complete original RFC 5322 message — all headers, MIME parts, encodings, exactly as received. Suitable for archival and re-parsing. |
-| `content.raw` | The latest message body only. Quoted reply history is stripped at the MIME level. Headers are excluded. |
+| `content.raw` | The decoded message body, headers excluded. Quoted reply history and signatures are **retained**; no cleanup is applied. This is the bounded, full-body fallback for consumers that cannot use `rawFull`. |
 | `content.html` | HTML rendition of the latest message content. `null` if the message has no HTML part. |
 | `content.text` | Plain text rendition of the latest message content, decoded from any transfer encoding. |
-| `content.clean` | Plain text with email signatures and quoted reply chains removed using heuristic detection. May be imperfect. |
-| `content.forAI` | Derived from `clean`. Additionally: whitespace normalised, inline image references removed, forwarded-message headers collapsed to a single summary line. This is the field AI consumers SHOULD use as their primary input. |
+| `content.clean` | Plain text with quoted reply history and email signatures removed using heuristic detection, subject to the preservation rules in [§4.3.1](/aecs/specs/aecs-1/06-field-definitions/#431-content-preservation). Quoted lines directly above an authored line MAY be kept as context. |
+| `content.forAI` | Derived from `clean`. Additionally: whitespace normalised, inline image references removed, forwarded-message headers collapsed to a single summary line. It MUST NOT remove authored lines that `clean` kept, except by truncation to a configured limit, which MUST be marked in the output (for example `[truncated]`). This is the field AI consumers SHOULD use as their primary input. |
 
 Consumers preferring minimal context window usage should use `content.forAI`. Consumers requiring fidelity to the original should use `content.rawFull`.
+
+`clean` and `forAI` are lossy by design: they trade context for size, and their heuristics can be wrong. A consumer that acts on the body (classifying, routing, replying or deciding) SHOULD keep `text` or `raw` available as a fallback, and SHOULD use it when `processing.cleanFallback` is `true` or when `forAI` is much shorter than the task needs. A smaller `forAI` is only a saving if it still holds the evidence the task depends on.
+
+#### 4.3.1 Content Preservation
+
+These rules define what cleanup may remove when producing `clean` from `text`. They apply to every implementation that populates `clean`, whatever heuristics it uses. Each line of `text` falls into one of these kinds:
+
+| Kind | Definition |
+|---|---|
+| Quoted line | A line whose first non-whitespace character is `>`. |
+| Attribution line | A line that introduces quoted text, such as `On <date>, <name> wrote:`, including that attribution when the sending client wraps it onto a second line ending in `wrote:`. |
+| Unprefixed history | Everything from an unprefixed history marker to the end of `text`. The markers are an `Original Message` separator line (for example `-----Original Message-----`), or a reply/forward header block: a line starting `From:` followed within five lines by a line starting `Sent:`, `Date:`, `To:` or `Subject:`. A divider line directly above such a header block belongs to the history. A header block directly below a forwarded-message marker (for example `---------- Forwarded message ---------` or `Begin forwarded message:`) is **not** history: it introduces forwarded content, which is authored content for this rule set. |
+| Signature block | A short trailing block that starts at a signature marker: the RFC 3676 delimiter `-- `, a mobile-client line such as `Sent from my iPhone`, a confidentiality disclaimer, or a closing salutation. |
+| Authored line | Any non-blank line that is none of the above. |
+
+Rules:
+
+1. Cleanup MUST NOT remove an authored line. This includes authored lines that appear below or between quoted lines (bottom-posted and inline replies).
+2. Cleanup MAY remove attribution lines, unprefixed history, and quoted lines that follow the last authored line.
+3. Quoted lines that come before an authored line SHOULD be kept as context, because an answer like "No." means nothing without its question. An implementation MAY bound this context (the reference implementation keeps the last three quoted lines above each authored line), and MUST replace lines it drops with a visible marker such as `> [5 quoted lines omitted]`.
+4. A divider line on its own (a line made only of `_`, `-`, `=`, `*` or similar characters) MUST NOT be treated as the start of quoted history. Newsletters and notifications use dividers between sections.
+5. A signature block MUST be trailing. An implementation SHOULD NOT treat a block longer than about 10 non-empty lines (15 for a confidentiality disclaimer) as a signature: when more text follows a marker than that, the marker is a lookalike and the text is kept.
+6. If `text` is non-empty and cleanup would leave `clean` empty, `clean` MUST instead equal `text`, and `processing.cleanFallback` SHOULD be set to `true`.
+
+These rules are tested by the content-preservation fixtures in [`specs/conformance/content/`](./conformance/content/) ([§10](/aecs/specs/aecs-1/12-conformance/)).
 
 ---
 
@@ -121,6 +146,7 @@ Attachment binary content is not included in `NormalizedEmail`. Implementations 
 | Field | Type | Description |
 |---|---|---|
 | `processing.processedAt` | string | ISO 8601 UTC timestamp of when this normalization was produced. |
-| `processing.specVersion` | string | The AECS version used (e.g. `"1.0"`). |
+| `processing.specVersion` | string | The AECS version used (e.g. `"1.1"`). |
+| `processing.cleanFallback` | boolean | Optional. `true` when cleanup would have emptied a non-empty body, so `content.clean` holds `text` instead ([§4.3.1](/aecs/specs/aecs-1/06-field-definitions/#431-content-preservation) rule 6). Omitted or `false` otherwise. |
 
 ---

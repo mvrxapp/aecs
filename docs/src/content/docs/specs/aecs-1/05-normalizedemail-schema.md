@@ -45,7 +45,8 @@ title: "3. NormalizedEmail Schema"
 
   "processing": {
     "processedAt": "string",
-    "specVersion": "string"
+    "specVersion": "string",
+    "cleanFallback": "boolean (optional)"
   }
 }
 ```

@@ -1,0 +1,17 @@
+{
+  "description": "Outlook-style reply: unprefixed history starts at a From:/Sent: header block. Everything from the header block on MUST be removed.",
+  "specSection": "AECS-1 §4.3.1",
+  "input": {
+    "text": "Approved, please go ahead.\n\nFrom: Alice Example <alice@example.com>\nSent: Monday, 29 June 2026 09:00\nTo: Bob <bob@example.com>\nSubject: Budget request\n\nPlease approve the Q3 budget of $40,000."
+  },
+  "expected": {
+    "nonEmpty": true,
+    "mustContain": [
+      "Approved, please go ahead."
+    ],
+    "mustNotContain": [
+      "Sent: Monday, 29 June 2026 09:00",
+      "Please approve the Q3 budget of $40,000."
+    ]
+  }
+}
