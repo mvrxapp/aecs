@@ -136,7 +136,7 @@ export default {
       ),
     });
 
-    // 2. Persist (extractedText is stored in mvrx_attachments.extracted_text)
+    // 2. Persist (extractedText is stored in aecs_attachments.extracted_text)
     await d1Store(env.DB, email);
 
     // 3. At this point email.content.forAI contains the body + all extracted attachment text.

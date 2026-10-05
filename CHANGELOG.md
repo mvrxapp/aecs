@@ -5,6 +5,31 @@ Spec release history is also kept in each spec's Versioning section
 ([AECS-1 §8](./specs/AECS-1-ai-email-consumption.md#8-versioning),
 [AECS-SDK-1 Appendix C](./specs/AECS-SDK-1-specification.md)).
 
+## Unreleased — specs and docs
+
+No package code changes.
+
+### Added
+- **Storage and indexing guidance.** New informative AECS-1 Appendix C explains how to
+  store `NormalizedEmail` objects so the common reads touch only small, indexed rows:
+  - a hot message row (metadata plus bounded `forAI`), a warm body row (`text`, `clean`),
+    cold object storage (`rawFull`, `html`, attachment bytes) and derived side tables
+    (participants, references, thread summaries)
+  - mailbox-scoped SHA-256 keys, a non-null sort key, and `thread.position` computed at read time
+  - an index for each core read, idempotent writes, payload budgets, and deletion across tiers
+- **`examples/storage/`**: a dependency-free mapper (`to-rows.mjs`) and schemas for
+  SQLite / Cloudflare D1, PostgreSQL, MySQL, MongoDB and DynamoDB, plus a Cloudflare Email
+  Worker that stores to D1 + R2 (+ optional Vectorize).
+- **Storage guides on the docs site**, one per database.
+- `test/storage.test.mjs` applies the SQLite / D1 schema, runs every named query against
+  parsed mail, checks query plans for table scans, and checks that each docs page embeds
+  its example file verbatim.
+
+### Specification
+- **AECS-1 1.1.1:** adds Appendix C (informative). No normative change.
+- **AECS-SDK-1 0.5.0-draft:** §3.7 D1 storage now follows Appendix C, and the old
+  one-row-per-message schema (with HTML inline) is replaced.
+
 ## 0.3.0 — 2026-10-05
 
 Implements **AECS-1 1.1.0** and **AECS-SDK-1 0.4.0-draft**.

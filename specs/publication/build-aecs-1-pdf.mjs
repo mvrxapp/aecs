@@ -58,7 +58,7 @@ function runMdToPdf(inputPath) {
           <div style="width:100%;font-size:8pt;color:#666;padding:0 1in;
                       font-family:Consolas,'Courier New',monospace;
                       display:flex;justify-content:space-between;">
-            <span>AECS-1 v1.1.0</span>
+            <span>AECS-1 v1.1.1</span>
             <span>Page <span class="pageNumber"></span> of <span class="totalPages"></span></span>
             <span>mvrx.app/specs/aecs-1</span>
           </div>`,

@@ -239,68 +239,36 @@ function d1Init(db: D1Database): Promise<void>
 function d1Store(db: D1Database, email: NormalizedEmail): Promise<void>
 ```
 
-**D1 schema created by `d1Init()`:**
+**D1 schema created by `d1Init()`:** the tables in
+[`examples/storage/sqlite.sql`](https://github.com/mvrxapp/aecs/blob/main/examples/storage/sqlite.sql),
+which follow [AECS-1 Appendix C](/aecs/specs/aecs-1/15-appendix-c-storage-and-indexing-informative/) (storage and indexing). `d1Store()` writes the rows
+produced by [`examples/storage/to-rows.mjs`](https://github.com/mvrxapp/aecs/blob/main/examples/storage/to-rows.mjs)
+with the statements in [`examples/storage/sqlite-queries.sql`](https://github.com/mvrxapp/aecs/blob/main/examples/storage/sqlite-queries.sql).
+Both files are run by the reference implementation's test suite.
 
-This schema round-trips every AECS-1 field losslessly except `content.rawFull`, which is
-referenced via `raw_key` (an R2 pointer) rather than duplicated inline — consistent with
-`rawFull` being the large, archival-fidelity copy. `thread.position` deliberately has **no**
-column: per [§5.2](/aecs/specs/aecs-sdk-1/05-threading/#52-position), position is a property of a *query result* (computed by sorting a thread),
-not of a stored row, so persisting a static value for it would go stale the moment an
-earlier-timestamped message arrives later. `getThread()` computes it at read time instead.
+| Table | Tier | Holds |
+|---|---|---|
+| `aecs_messages` | Hot | One small row per message: IDs, hashed keys, sender, subject, dates, `forai`, attachment count, `spec_version`, `clean_fallback`, `blob_prefix`, `x_fields` |
+| `aecs_bodies` | Warm | `text` and `clean`, read when one message is opened |
+| `aecs_addresses` | Derived | One row per from/to/cc/bcc address, indexed by `(email, ts)` |
+| `aecs_references` | Derived | One row per `thread.references` entry, indexed by `ref_id` |
+| `aecs_threads` | Derived | One summary row per thread: subject, first/last timestamp, count, last message |
+| `aecs_attachments` | Derived | Attachment metadata and `blob_key` |
+| `aecs_search` | Optional | FTS5 index over subject and clean body |
+| R2 (`BlobStore`) | Cold | `raw.eml` (`content.rawFull`), `body.html` (`content.html`), attachment bytes, under `blob_prefix` |
 
-`timestamp` is `NOT NULL` even though `metadata.timestamp` is nullable (AECS-1 [§6](/aecs/specs/aecs-1/08-timestamps/), when the
-`Date` header is absent/unparseable) — `d1Store()` falls back to `processing.processedAt`
-(converted to epoch seconds) for this column only, so thread/inbox ordering and the indexes
-below stay meaningful. `getThread()`/`getMessage()`/`listMessages()` still return the true
-`metadata.timestamp: null` on the reconstructed `NormalizedEmail` — the fallback is a
-storage-layer sort-key detail, not a change to what the message actually reports.
+Every table is keyed by `(mailbox_id, message_key)`, where `message_key` is the lowercase hex
+SHA-256 of `messageId` (`thread_key` likewise for `threadId`). `thread.position` has no
+column: per [§5.2](/aecs/specs/aecs-sdk-1/05-threading/#52-position), it is a property of a query result, not of a stored row, and
+`getThread()` computes it at read time. The `ts` sort column is `NOT NULL`; when
+`metadata.timestamp` is `null` (AECS-1 [§6](/aecs/specs/aecs-1/08-timestamps/)), `d1Store()` uses `processing.processedAt` for this column
+only, and the true value stays in `date`.
 
-```sql
-CREATE TABLE IF NOT EXISTS mvrx_messages (
-  message_id      TEXT PRIMARY KEY,
-  thread_id       TEXT NOT NULL,
-  from_email      TEXT NOT NULL,
-  from_name       TEXT,
-  to_json         TEXT,                 -- JSON: Address[] — NormalizedEmail.metadata.to
-  cc_json         TEXT,                 -- JSON: Address[] — metadata.cc
-  bcc_json        TEXT,                 -- JSON: Address[] — metadata.bcc
-  subject         TEXT,
-  timestamp       INTEGER NOT NULL,     -- Unix epoch seconds — metadata.timestamp
-  content_raw     TEXT,                 -- content.raw
-  content_text    TEXT,                 -- content.text
-  content_clean   TEXT,                 -- content.clean
-  content_forai   TEXT,                 -- content.forAI
-  content_html    TEXT,                 -- content.html
-  raw_key         TEXT,                 -- R2 key for content.rawFull; null if not stored
-  in_reply_to     TEXT,                 -- thread.inReplyTo
-  references_json TEXT,                 -- JSON: string[] — thread.references
-  processed_at    TEXT NOT NULL,
-  x_fields        TEXT                  -- JSON blob for all x_ extension fields
-);
-
-CREATE TABLE IF NOT EXISTS mvrx_threads (
-  thread_id     TEXT PRIMARY KEY,
-  subject       TEXT,
-  first_at      INTEGER NOT NULL,
-  last_at       INTEGER NOT NULL,
-  message_count INTEGER NOT NULL DEFAULT 1
-);
-
-CREATE TABLE IF NOT EXISTS mvrx_attachments (
-  id             TEXT PRIMARY KEY,     -- Attachment.id, e.g. "<messageId>:0"
-  message_id     TEXT NOT NULL REFERENCES mvrx_messages(message_id),
-  filename       TEXT NOT NULL,
-  content_type   TEXT NOT NULL,
-  size           INTEGER NOT NULL,
-  cid            TEXT,                 -- Content-ID for inline attachments; null otherwise
-  blob_key       TEXT,                 -- R2 key; null if not stored
-  extracted_text TEXT
-);
-
-CREATE INDEX IF NOT EXISTS mvrx_msg_thread ON mvrx_messages(thread_id, timestamp);
-CREATE INDEX IF NOT EXISTS mvrx_msg_from   ON mvrx_messages(from_email, timestamp);
-CREATE INDEX IF NOT EXISTS mvrx_msg_time   ON mvrx_messages(timestamp DESC);
-```
+`d1Store()` is idempotent: the message insert is "insert if absent", and the thread
+summary is updated only when that insert created a row. Blobs are written to R2 before the
+D1 batch, so a row never points at a missing blob. Run `d1Init()` as a migration
+(`wrangler d1 migrations apply`), not on every request: re-running `CREATE INDEX` on the hot
+path costs writes.
 
 ---
 
@@ -340,8 +308,10 @@ interface MessagePage {
 ```
 
 All three functions return objects reconstructed from the [§3.7](/aecs/specs/aecs-sdk-1/03-core-api/#37-storage--d1init--d1store) schema — every AECS-1 field
-is populated except `content.rawFull` (fetch separately via `raw_key` from your `BlobStore`
-if you need it). `thread.position` specifically: `getThread()` populates it (it has every
+is populated except `content.rawFull` and `content.html` (fetch them from your `BlobStore`
+at `<blob_prefix>raw.eml` and `<blob_prefix>body.html` if you need them). `listMessages()`
+reads only the hot `aecs_messages` row, so its results carry `content.forAI` but not
+`text`/`clean`; `getMessage()` and `getThread()` also read `aecs_bodies`. `thread.position` specifically: `getThread()` populates it (it has every
 message in the thread, per [§5.2](/aecs/specs/aecs-sdk-1/05-threading/#52-position)); `getMessage()` and `listMessages()` always return
 `thread.position: null`, because a single-row lookup or an arbitrary page of messages from
 different threads doesn't have each message's siblings available to compute it against.

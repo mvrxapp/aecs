@@ -282,8 +282,8 @@ export default {
 
       if (extractedText) {
         await env.DB.prepare(
-          "UPDATE mvrx_attachments SET extracted_text = ? WHERE id = ?"
-        ).bind(extractedText, attachmentId).run();
+          "UPDATE aecs_attachments SET extracted_text = ? WHERE mailbox_id = ? AND attachment_id = ?"
+        ).bind(extractedText, userId, attachmentId).run(); // mailbox_id = userId here
 
         // Notify connected clients that extracted text is ready
         await publishEvent(env.RELAY, userId, {

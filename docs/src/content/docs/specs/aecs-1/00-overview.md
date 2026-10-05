@@ -4,7 +4,7 @@ title: "Overview"
 
 # AECS-1: AI Email Consumption Specification
 
-**Version:** 1.1.0  
+**Version:** 1.1.1  
 **Status:** Final  
 **Date:** 2026-10-05
 **Authors:** MVRX Group  

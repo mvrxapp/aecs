@@ -22,6 +22,7 @@ normalization, with no Cloudflare or storage assumptions baked in.
 - [JSON Schema](./specs/schema/normalized-email.schema.json) — machine-checkable `NormalizedEmail` shape
 - [Conformance suite](./specs/conformance/) — fixtures + an independent checker (`verify.py`)
 - [Docs site](https://mvrxapp.github.io/aecs/) — browsable version of the above
+- [Storage guides](https://mvrxapp.github.io/aecs/storage/) — tables, keys and indexes for Cloudflare D1/R2, SQLite, PostgreSQL, MySQL, MongoDB and DynamoDB ([`examples/storage/`](./examples/storage/))
 - [Changelog](./CHANGELOG.md) — what changed in each release
 
 ## Install
