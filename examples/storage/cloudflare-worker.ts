@@ -1,5 +1,8 @@
 // Cloudflare Email Worker: parse inbound mail with AECS and store it per AECS-1 Appendix C.
 //
+// Status: reference example. It has NOT been typechecked against @cloudflare/workers-types or
+// run in the Workers runtime. Test it with `wrangler dev` and real bindings before relying on it.
+//
 //   D1        aecs_* tables from sqlite.sql (hot rows, bodies, addresses, threads, search)
 //   R2        raw.eml, body.html and attachment bytes under blob_prefix
 //   Vectorize optional: one vector per message, embedding of content.forAI

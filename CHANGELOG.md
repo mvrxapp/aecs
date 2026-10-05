@@ -25,6 +25,24 @@ No package code changes.
   parsed mail, checks query plans for table scans, and checks that each docs page embeds
   its example file verbatim.
 
+### Fixed
+- **`toRows()` (`examples/storage/to-rows.mjs`) no longer crashes on valid AECS objects
+  with omitted fields.** It assumed `metadata.bcc` and the other arrays, objects and
+  `processing` fields were always present, so a conformant object without them threw, for
+  example "email.metadata.bcc is not iterable". It now accepts any AECS-1-conformant object
+  (only `messageId` and `threadId` are required), treats omitted and `null` fields the same,
+  and throws a clear `TypeError` when a required field is missing. An omitted `rawFull` no
+  longer produces a blob with an undefined body.
+- **`emailToDecisionState()` / `decideEmail()`** had the same assumption about `to` and
+  `attachments` and now accept omitted or `null` fields. The body falls back to
+  `content.text` when `forAI` and `clean` are absent.
+
+### Documentation
+- The storage examples, docs overview and Cloudflare guide now state their status plainly:
+  reference examples rather than a complete integration; the Worker has not been run in
+  the Workers runtime; MySQL, MongoDB and DynamoDB are untested; the SDK storage helpers
+  (`d1Store`, `getThread`, …) are still planned.
+
 ### Specification
 - **AECS-1 1.1.1:** adds Appendix C (informative). No normative change.
 - **AECS-SDK-1 0.5.0-draft:** §3.7 D1 storage now follows Appendix C, and the old

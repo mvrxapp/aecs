@@ -8,6 +8,15 @@ keys and indexes work for every mailbox. This section turns
 [AECS-1 Appendix C](/aecs/specs/aecs-1/15-appendix-c-storage-and-indexing-informative/) into
 ready-to-use schemas.
 
+:::caution[Status]
+These are **reference schemas and examples** that show the architecture, not a complete
+storage integration. The SQLite / D1 schema, its queries and the `to-rows.mjs` mapper are
+tested in this repo. The Cloudflare Worker has not been run in the Workers runtime, and the
+MySQL, MongoDB and DynamoDB examples have not been run against a server. The SDK storage
+helpers (`d1Store`, `getThread` and others, AECS-SDK-1 §3.7–3.8) are still planned.
+Migrations, retention, retries and access control are left to your application.
+:::
+
 ## The layout in one picture
 
 | Tier | Where | Holds | Read by |
@@ -46,7 +55,9 @@ raw message sits in object storage for re-parsing.
 ## From `NormalizedEmail` to rows
 
 [`to-rows.mjs`](https://github.com/mvrxapp/aecs/blob/main/examples/storage/to-rows.mjs) maps a parsed email to exactly these rows and blobs. It has
-no dependencies and runs in Node 18+, Workers, Deno and browsers.
+no dependencies and runs in Node 18+, Workers, Deno and browsers. It accepts any
+AECS-1-conformant object: only `messageId` and `threadId` are required, and omitted or
+`null` fields become empty arrays or `null` columns.
 
 ```ts
 import { parse } from "@mvrx/aecs";

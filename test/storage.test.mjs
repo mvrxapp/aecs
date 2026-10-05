@@ -181,3 +181,53 @@ test("storage docs embed the example files verbatim", async () => {
     assert.ok((await read(doc)).includes((await read(file)).trim()), `${doc} is out of date with ${file}`);
   }
 });
+
+test("toRows accepts any AECS-1-conformant object: only messageId and threadId are required", async () => {
+  const now = new Date("2026-10-05T00:00:00Z");
+  const minimal = { messageId: "min@example.com", threadId: "min@example.com" };
+  const r = await toRows(minimal, { mailboxId: "mbx-1", now });
+  assert.equal(r.message.from_email, "");
+  assert.equal(r.message.ts, 1791158400, "sort key falls back to now when timestamp and processedAt are absent");
+  assert.equal(r.message.spec_version, "unknown");
+  assert.equal(r.message.processed_at, now.toISOString());
+  assert.equal(r.message.attachment_count, 0);
+  assert.deepEqual([r.addresses, r.references, r.attachments, r.blobs], [[], [], [], []]);
+
+  // Explicit nulls mean the same as omission (AECS-1 §10 point 2).
+  const nulls = {
+    messageId: "nul@example.com",
+    threadId: "root@example.com",
+    metadata: { from: null, to: null, cc: null, bcc: null, subject: null, date: null, timestamp: null },
+    content: { rawFull: null, raw: null, html: null, text: null, clean: null, forAI: null },
+    thread: { position: null, inReplyTo: null, references: null },
+    attachments: null,
+    processing: { processedAt: "2026-10-01T00:00:00Z", specVersion: "1.1" },
+  };
+  const n = await toRows(nulls, { now });
+  assert.equal(n.message.ts, 1790812800, "sort key falls back to processedAt");
+  assert.deepEqual([n.addresses, n.references, n.blobs], [[], [], []]);
+
+  // Partial metadata: bcc omitted, cc present.
+  const partial = await toRows({
+    messageId: "p@example.com",
+    threadId: "p@example.com",
+    metadata: { from: { email: "A@Example.com" }, cc: [{ email: "c@example.com", name: "C" }] },
+  });
+  assert.deepEqual(partial.addresses.map((a) => [a.role, a.email, a.name]), [["from", "a@example.com", null], ["cc", "c@example.com", "C"]]);
+
+  await assert.rejects(toRows({ threadId: "t@x" }), /messageId is required/);
+  await assert.rejects(toRows(null), TypeError);
+});
+
+sqliteTest("a minimal conformant object satisfies the SQLite schema's NOT NULL columns", async () => {
+  const { db, q } = await setup();
+  const m = (await toRows({ messageId: "min@example.com", threadId: "min@example.com" }, { mailboxId: "mbx-1" })).message;
+  db.prepare(q.insert_message).run(
+    m.mailbox_id, m.message_key, m.message_id, m.thread_key, m.thread_id, m.ts, m.date, m.from_email, m.from_name,
+    m.subject, m.in_reply_to, m.forai, m.attachment_count, m.size_bytes, m.clean_fallback, m.spec_version,
+    m.processed_at, m.blob_prefix, m.x_fields,
+  );
+  db.prepare(q.upsert_thread).run(m.mailbox_id, m.thread_key, m.thread_id, m.subject, m.ts, m.message_key);
+  assert.equal(db.prepare(q.threads_recent).all("mbx-1", 10)[0].message_count, 1);
+  assert.equal(db.prepare(q.stale_spec_version).all("mbx-1", "1.1", 10).length, 1, "'unknown' version is flagged for re-parse");
+});

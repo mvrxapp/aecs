@@ -175,3 +175,23 @@ test("decideEmail sends the wrapped forAI body and metadata as state", async () 
   });
   assert.deepEqual(emailToDecisionState(email, { includeMetadata: false }), { body: email.content.forAI });
 });
+
+test("emailToDecisionState accepts objects with omitted or null optional fields", () => {
+  assert.deepEqual(emailToDecisionState({ messageId: "m@x", threadId: "m@x" }), {
+    from: null,
+    to: [],
+    subject: null,
+    date: null,
+    body: "",
+  });
+  assert.deepEqual(
+    emailToDecisionState({
+      messageId: "m@x",
+      threadId: "m@x",
+      metadata: { from: null, to: null },
+      content: { forAI: null, clean: null, text: "plain body" },
+      attachments: null,
+    }),
+    { from: null, to: [], subject: null, date: null, body: "plain body" },
+  );
+});

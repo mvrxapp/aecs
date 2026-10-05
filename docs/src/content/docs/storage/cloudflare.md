@@ -148,12 +148,21 @@ CREATE VIRTUAL TABLE IF NOT EXISTS aecs_search USING fts5 (
 
 ## 3. Email Worker (`cloudflare-worker.ts`)
 
+:::caution
+Reference example, not yet run in the Workers runtime. Try it with `wrangler dev` and real
+bindings before production use. The planned SDK helper `d1Store()` (AECS-SDK-1 §3.7) will
+wrap these steps.
+:::
+
 Writes R2 first, then all rows in one atomic, idempotent `DB.batch()`, then the optional
 vector in `waitUntil`. The SQL comes from [`sqlite-queries.sql`](https://github.com/mvrxapp/aecs/blob/main/examples/storage/sqlite-queries.sql),
 bundled as text.
 
 ```ts
 // Cloudflare Email Worker: parse inbound mail with AECS and store it per AECS-1 Appendix C.
+//
+// Status: reference example. It has NOT been typechecked against @cloudflare/workers-types or
+// run in the Workers runtime. Test it with `wrangler dev` and real bindings before relying on it.
 //
 //   D1        aecs_* tables from sqlite.sql (hot rows, bodies, addresses, threads, search)
 //   R2        raw.eml, body.html and attachment bytes under blob_prefix
