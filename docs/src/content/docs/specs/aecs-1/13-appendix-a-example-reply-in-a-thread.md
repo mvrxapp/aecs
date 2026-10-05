@@ -34,7 +34,7 @@ This example shows a reply message. Note how the content levels diverge as proce
   "attachments": [],
   "processing": {
     "processedAt": "2026-06-29T14:32:01Z",
-    "specVersion": "1.0"
+    "specVersion": "1.1"
   }
 }
 ```

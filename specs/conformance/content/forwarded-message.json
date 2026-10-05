@@ -1,0 +1,15 @@
+{
+  "description": "A forwarded message: the header block under the 'Forwarded message' marker introduces forwarded content, not reply history. The forwarded body MUST survive.",
+  "specSection": "AECS-1 §4.3.1",
+  "input": {
+    "text": "FYI, see the pricing change below.\n\n---------- Forwarded message ---------\nFrom: Vendor <billing@vendor.example>\nDate: Mon, 28 Sep 2026 at 10:00\nSubject: Price update\nTo: Bob <bob@example.com>\n\nFrom 1 November the Pro plan costs $12 per month."
+  },
+  "expected": {
+    "nonEmpty": true,
+    "mustContain": [
+      "FYI, see the pricing change below.",
+      "From 1 November the Pro plan costs $12 per month."
+    ],
+    "mustNotContain": []
+  }
+}

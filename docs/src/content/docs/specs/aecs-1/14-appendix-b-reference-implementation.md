@@ -13,7 +13,8 @@ title: "Appendix B: Reference Implementation"
 | `EmailThread` | `thread.position` assignment ([§4.4](/aecs/specs/aecs-1/06-field-definitions/#44-thread)) |
 
 Conformance tests in `packages/mail/test/core.test.mjs` run every fixture in
-[`specs/conformance/fixtures/`](./conformance/fixtures/).
+[`specs/conformance/fixtures/`](./conformance/fixtures/), and the content-preservation
+fixtures in [`specs/conformance/content/`](./conformance/content/).
 
 - GitHub: [github.com/mvrxapp/mail](https://github.com/mvrxapp/mail)
 - npm: [`@mvrx/mail`](https://npmjs.com/package/@mvrx/mail)

@@ -40,7 +40,7 @@ interface NormalizedEmail {
     raw:     string | null;      // body only, quoted history present
     html:    string | null;      // HTML part of latest content
     text:    string | null;      // plain text of latest content
-    clean:   string | null;      // quotes and signatures stripped
+    clean:   string | null;      // quotes and signatures stripped; authored lines always kept (AECS-1 §4.3.1)
     forAI:   string | null;      // LLM-optimised (see Section 4)
   };
 
@@ -54,7 +54,8 @@ interface NormalizedEmail {
 
   processing: {
     processedAt:      string;             // ISO 8601 UTC
-    specVersion:      string;
+    specVersion:      string;             // "1.1"
+    cleanFallback?:   boolean;            // true when clean fell back to text (AECS-1 §4.3.1 rule 6)
     attachmentErrors: AttachmentError[];  // non-fatal errors during onAttachment
   };
 }

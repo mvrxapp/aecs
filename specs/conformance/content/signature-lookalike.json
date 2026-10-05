@@ -1,0 +1,16 @@
+{
+  "description": "A 'Sent from my iPhone' line appears mid-message, followed by several authored lines. Signature removal MUST only remove a short trailing block, so the authored lines below it MUST survive.",
+  "specSection": "AECS-1 §4.3.1",
+  "input": {
+    "text": "Quick update before my flight.\nSent from my iPhone\n\nCorrection now that I have landed:\nThe vendor call is moved to Wednesday.\nThe budget cap is $8,000, not $10,000.\nPlease update the tracker."
+  },
+  "expected": {
+    "nonEmpty": true,
+    "mustContain": [
+      "The vendor call is moved to Wednesday.",
+      "The budget cap is $8,000, not $10,000.",
+      "Please update the tracker."
+    ],
+    "mustNotContain": []
+  }
+}
