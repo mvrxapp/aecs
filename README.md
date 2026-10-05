@@ -44,6 +44,22 @@ console.log(email.content.forAI);   // wrapped, AI-ready representation
 `parse()` accepts a raw message as a `string`, `ArrayBuffer`, `Uint8Array`, or a
 `ReadableStream<Uint8Array>`.
 
+### Typed decisions (Jev, Cloudflare Clef)
+
+Ask decision models typed questions about an email and get typed answers with
+probabilities back, not free text. See [AECS-SDK-1 §6.3](./specs/AECS-SDK-1-specification.md#63-decision-models-typed-answers).
+
+```typescript
+import { clefProvider, decideEmail, jevProvider } from "@mvrx/aecs/decisions";
+
+const { answers } = await decideEmail(email, clefProvider(env.AI), {
+  route: { type: "choice", instructions: "Which team?", criteria: { billing: null, support: null } },
+  urgent: { type: "noul", instructions: "Is this urgent?" },
+});
+answers.route.choice;   // "billing" | "support"
+answers.urgent.noul;    // 0..1
+```
+
 ## License
 
 MIT. See [`LICENSE`](./LICENSE).

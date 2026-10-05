@@ -21,6 +21,10 @@
       "import": "./dist/content.js",
       "types": "./dist/content.d.ts"
     },
+    "./decisions": {
+      "import": "./dist/decisions.js",
+      "types": "./dist/decisions.d.ts"
+    },
     "./parse": {
       "import": "./dist/parse.js",
       "types": "./dist/parse.d.ts"
@@ -56,7 +60,7 @@
   "devDependencies": {
     "typescript": "^5.8.0"
   },
-  "keywords": ["email", "ai", "mime", "rfc5322", "aecs", "normalize", "threading", "spec"],
+  "keywords": ["email", "ai", "mime", "rfc5322", "aecs", "normalize", "threading", "spec", "decision-models", "jev", "clef"],
   "repository": {
     "type": "git",
     "url": "https://github.com/mvrxapp/aecs.git"

@@ -1,9 +1,9 @@
 # AECS SDK Specification
 
 **Document:** AECS-SDK-1  
-**Version:** 0.3.0-draft  
+**Version:** 0.4.0-draft  
 **Status:** Draft  
-**Date:** 2026-07-03  
+**Date:** 2026-10-05  
 **Authors:** MVRX Group  
 **Implements:** [AECS-1 v1.0.0 (Final, 2026-07-03)](./AECS-1-ai-email-consumption.md)
 
@@ -15,11 +15,12 @@
 > threading, UTC timestamps, content levels including `forAI` (`rawFull` / `raw` /
 > `html` / `text` / `clean` / `forAI`), `EmailThread`, the built-in `forAI` wrappers
 > (`xml`, `markdown`, `block`), and lazy attachment metadata + `content()` loading
-> (including the basic `onAttachment` callback).
+> (including the basic `onAttachment` callback), and typed decision-model connectors
+> (Jev, Clef, and a text-LLM adapter, [§6.3](/aecs/specs/aecs-sdk-1/06-ai-provider-interface/#63-decision-models-typed-answers)).
 >
 > **Roadmap — specified in this document but not yet implemented:** D1 storage
 > (`d1Init`/`d1Store`/query API, [§3.7](/aecs/specs/aecs-sdk-1/03-core-api/#37-storage--d1init--d1store)–[3.8](/aecs/specs/aecs-sdk-1/03-core-api/#38-query-api)), `EmailTransport` implementations and
-> `sendEmail()` ([§3.5](/aecs/specs/aecs-sdk-1/03-core-api/#35-emailtransport)–[3.6](/aecs/specs/aecs-sdk-1/03-core-api/#36-sendemailmessage-transport)), AI provider connectors ([§6](/aecs/specs/aecs-sdk-1/06-ai-provider-interface/)), deterministic and
+> `sendEmail()` ([§3.5](/aecs/specs/aecs-sdk-1/03-core-api/#35-emailtransport)–[3.6](/aecs/specs/aecs-sdk-1/03-core-api/#36-sendemailmessage-transport)), text-generation AI provider connectors ([§6.1](/aecs/specs/aecs-sdk-1/06-ai-provider-interface/#61-interface)–[6.2](/aecs/specs/aecs-sdk-1/06-ai-provider-interface/#62-pre-built-connectors)), deterministic and
 > AI-powered analysis tools ([§7](/aecs/specs/aecs-sdk-1/07-ai-tools-analysis/)), AI compose ([§8](/aecs/specs/aecs-sdk-1/08-ai-compose-writing-surfaces/)), attachment processors and the
 > attachment-to-LLM aggregation helpers ([§9.3](/aecs/specs/aecs-sdk-1/09-attachment-handling/#93-built-in-cf-processor--store-to-r2)–[9.8](/aecs/specs/aecs-sdk-1/09-attachment-handling/#98-async-extraction-large-files-via-queue)), the rules engine ([§15](/aecs/specs/aecs-sdk-1/15-rules-engine/)), the
 > real-time `UserRelay`/SSE relay ([§16](/aecs/specs/aecs-sdk-1/16-real-time-events-userhub/)), and EAS/MCP/hosted-service surfaces. These
@@ -581,7 +582,7 @@ const email = await parse(message, {
 
 ## 6. AI Provider Interface
 
-> **Status: Roadmap.** This section specifies a planned module; it is not yet implemented in `@mvrx/mail`.
+> **Status: Roadmap** for [§6.1](/aecs/specs/aecs-sdk-1/06-ai-provider-interface/#61-interface)–[6.2](/aecs/specs/aecs-sdk-1/06-ai-provider-interface/#62-pre-built-connectors) (text-generation connectors). [§6.3](/aecs/specs/aecs-sdk-1/06-ai-provider-interface/#63-decision-models-typed-answers) (decision models) is implemented.
 
 Every AI surface in the SDK accepts an `AiProvider`. The interface is a minimal common denominator that every major LLM satisfies.
 
@@ -681,6 +682,101 @@ const ai: AiProvider = {
   },
 };
 ```
+
+### 6.3 Decision Models (Typed Answers)
+
+> **Status: Implemented** in `@mvrx/aecs/decisions` (also re-exported from `@mvrx/aecs`). This subsection is independent of the roadmap text-generation connectors in [§6.1](/aecs/specs/aecs-sdk-1/06-ai-provider-interface/#61-interface)–[6.2](/aecs/specs/aecs-sdk-1/06-ai-provider-interface/#62-pre-built-connectors).
+
+Decision models (also called *System One* models) do not generate text. They read a `state` and a map of typed questions, and return one typed answer per question with probabilities. This fits the classification and routing work in [§7](/aecs/specs/aecs-sdk-1/07-ai-tools-analysis/) and the rules engine ([§15](/aecs/specs/aecs-sdk-1/15-rules-engine/)): the answer can only be a value the caller defined, so nothing needs to be parsed out of free text.
+
+The SDK targets the System One wire format that TypeSafe Jev and Cloudflare Clef share:
+
+| Question `type` | `criteria` | Answer fields |
+|---|---|---|
+| `noul` | optional `{ true, false }` descriptions | `noul`: probability of yes, `0`–`1` |
+| `choice` | map of option id → description (or `null`), 2–255 options | `choice`, `probabilities` per option, `confidence` |
+| `score` | ordered array of level descriptions, lowest first, 2–10 levels | `score` (probability-weighted level index, may fall between levels), `probabilities`, `legend`, `confidence` |
+
+A request holds 1–64 questions. Question ids use letters, digits, `_`, `.` and `-` (max 100 characters). Answers come back under the same ids.
+
+#### 6.3.1 Interface
+
+```typescript
+interface DecisionProvider {
+  decide<Q extends DecisionQuestions>(request: {
+    state: DecisionValue;          // string, object or array
+    questions: Q;
+    model?: string;                // overrides the provider default
+    images?: (string | { content_type: string; base64: string })[]; // Clef only
+    signal?: AbortSignal;
+  }): Promise<{
+    model: string;                 // versioned id that answered
+    answers: DecisionAnswers<Q>;   // typed per question; choice answers keep their option ids
+    usage: { input_tokens: number; output_tokens: number };
+  }>;
+}
+```
+
+Every provider MUST validate the question map before sending it, and MUST check that each answer matches its question's type: a `choice` must be one of the defined options and a `score` must be in range. Any failure throws `DecisionError` (with `status` and `body` when the failure came from HTTP).
+
+#### 6.3.2 Connectors
+
+**TypeSafe Jev:** `POST https://api.typesafe.ai/v1/systemone`. Text only, so `images` are not sent.
+```typescript
+import { jevProvider } from "@mvrx/aecs/decisions";
+
+const jev = jevProvider({ apiKey: env.TYPESAFE_KEY });
+// Default model: jev-latest. Pin "jev-1.13.0" if you tune confidence thresholds.
+// Through OpenRouter: jevProvider({ apiKey: env.OPENROUTER_KEY,
+//   endpoint: "https://openrouter.ai/api/v1/systemone", model: "typesafe/jev-1.13" })
+```
+
+**Cloudflare Clef**, through the Workers AI binding (`@cf/cloudflare/clef` or `@cf/cloudflare/clef-flash`). Accepts up to 4 images:
+```typescript
+import { clefProvider, clefRestProvider } from "@mvrx/aecs/decisions";
+
+const clef = clefProvider(env.AI);                          // default model: clef
+const fast = clefProvider(env.AI, { model: "clef-flash" });
+// Outside a Worker:
+const rest = clefRestProvider({ accountId: env.CF_ACCOUNT_ID, apiToken: env.CF_API_TOKEN });
+```
+
+**Any System One endpoint:** `systemOneProvider({ endpoint, apiKey, defaultModel, supportsImages? })`.
+
+**OpenAI Decisions API:** announced at DevDay on 2026-09-29. It is in limited preview and OpenAI has not published a request or response schema, so this SDK has no native connector for it yet. Until it does, `textDecisionProvider` answers the same typed questions with any text LLM, for example an OpenAI model called with a strict JSON schema:
+```typescript
+import { textDecisionProvider } from "@mvrx/aecs/decisions";
+
+const viaLlm = textDecisionProvider({
+  model: "gpt-4o-mini",
+  complete: async (messages) => (await openai.responses.create({ model: "gpt-4o-mini", input: messages })).output_text,
+});
+```
+A text model has no calibrated probability distribution. The adapter gives the chosen option probability `1` and confidence `1`, so do not use those values for confidence-gated routing.
+
+#### 6.3.3 Deciding About an Email
+
+`decideEmail()` builds `state` from a `NormalizedEmail`: `from`, `to`, `subject`, `date`, `body` and attachment names and types. `body` is `content.forAI`, so the untrusted-content wrapper applied at parse time ([§10](/aecs/specs/aecs-sdk-1/10-pluggable-wrappers-for-safe-llm-usage/)) stays in place ([§11.1](/aecs/specs/aecs-sdk-1/11-security-best-practices/#111-email-content-is-untrusted)).
+
+```typescript
+import { parse, wrappers } from "@mvrx/aecs";
+import { clefProvider, decideEmail } from "@mvrx/aecs/decisions";
+
+const email = await parse(message.raw, { wrapper: wrappers.xml("email") });
+const { answers } = await decideEmail(email, clefProvider(env.AI), {
+  needs_reply: { type: "noul", instructions: "Does the sender expect a reply?" },
+  route: {
+    type: "choice",
+    instructions: "Which team should handle this email?",
+    criteria: { billing: "Invoices, refunds", support: "Bugs, outages", sales: "Pricing, upgrades" },
+  },
+  urgency: { type: "score", instructions: "How urgent is this?", criteria: ["Can wait", "This week", "Right now"] },
+});
+
+if (answers.route.confidence > 0.8) await assign(answers.route.choice); // "billing" | "support" | "sales"
+```
+
+`emailToDecisionState(email, { includeMetadata?, includeAttachments? })` returns the same `state` for use with `provider.decide()` directly.
 
 ---
 
@@ -1974,5 +2070,6 @@ The spec version implemented is declared in `package.json`:
 
 | Version | Date | Notes |
 |---|---|---|
+| 0.4.0-draft | 2026-10-05 | Added [§6.3](/aecs/specs/aecs-sdk-1/06-ai-provider-interface/#63-decision-models-typed-answers) Decision Models: the typed `DecisionProvider` interface, connectors for TypeSafe Jev and Cloudflare Clef (System One wire format), a text-LLM adapter used until the OpenAI Decisions API publishes a schema, and `decideEmail()`. Implemented in `@mvrx/aecs/decisions`. No normative AECS-1 text changed. |
 | 0.3.0-draft | 2026-07-03 | Synced to [AECS-1 v1.0.0 (Final, 2026-07-03)](./AECS-1-ai-email-consumption.md). Added the Implementation Status note (near the top of this document) and `Status: Roadmap` banners on every section that specifies a module not yet implemented in `@mvrx/mail`, roadmap annotations on the [§2.2](/aecs/specs/aecs-sdk-1/02-installation-setup/#22-cloudflare-workers--full-setup) setup bindings and [§13](/aecs/specs/aecs-sdk-1/13-examples/)–[§14](/aecs/specs/aecs-sdk-1/14-extensibility/) examples/extensibility, plus a [§11](/aecs/specs/aecs-sdk-1/11-security-best-practices/) cross-reference to AECS-1 [§7](/aecs/specs/aecs-1/09-security-considerations/)'s security guidance. No normative algorithm text changed. |
 | 0.2.0-draft | 2026-06-29 | Prior draft, written before AECS-1 was finalized. |

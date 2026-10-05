@@ -1,5 +1,6 @@
 export * from "./attachments.js";
 export * from "./content.js";
+export * from "./decisions.js";
 export * from "./parse.js";
 export * from "./thread.js";
 export * from "./threading.js";
