@@ -5,11 +5,11 @@ title: "Overview"
 # AECS SDK Specification
 
 **Document:** AECS-SDK-1  
-**Version:** 0.3.0-draft  
+**Version:** 0.3.1-draft  
 **Status:** Draft  
-**Date:** 2026-07-03  
+**Date:** 2026-10-05  
 **Authors:** MVRX Group  
-**Implements:** [AECS-1 v1.0.0 (Final, 2026-07-03)](./AECS-1-ai-email-consumption.md)
+**Implements:** [AECS-1 v1.1.0 (Final, 2026-10-05)](./AECS-1-ai-email-consumption.md)
 
 ---
 

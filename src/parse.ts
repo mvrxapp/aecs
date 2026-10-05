@@ -55,8 +55,12 @@ export async function parse(source: EmailSource, options: ParseOptions = {}): Pr
     : await resolveThreadId(rawHeaders);
 
   const text = parsed.text ? normalizeText(parsed.text) : parsed.html ? htmlToText(parsed.html) : null;
-  const rawBody = text ? stripQuotedChains(text) : null;
-  const clean = rawBody ? await cleanText(rawBody, options.cleaner) : null;
+  // AECS-1 §4.3: raw is the decoded body with quoted history still present.
+  const rawBody = parsed.text ?? text;
+  const cleaned = text ? await cleanText(text, options.cleaner) : null;
+  // AECS-1 §4.3.1: never turn a non-empty body into an empty clean view.
+  const cleanFallback = text !== null && text.trim() !== "" && !cleaned;
+  const clean = cleanFallback ? text : cleaned || null;
 
   const attachments = parsed.attachments.map((attachment, index) =>
     toAttachment(attachment, `${messageId}:${index}`),
@@ -91,7 +95,8 @@ export async function parse(source: EmailSource, options: ParseOptions = {}): Pr
     attachments,
     processing: {
       processedAt: toIsoUtcSeconds(new Date()),
-      specVersion: options.specVersion ?? "1.0",
+      specVersion: options.specVersion ?? "1.1",
+      ...(cleanFallback ? { cleanFallback } : {}),
       attachmentErrors,
     },
   };
@@ -132,7 +137,7 @@ async function cleanText(
   rawBody: string,
   cleaner?: (text: string) => string | Promise<string>,
 ): Promise<string> {
-  const cleaned = cleaner ? await cleaner(rawBody) : stripSignature(rawBody);
+  const cleaned = cleaner ? await cleaner(rawBody) : stripSignature(stripQuotedChains(rawBody));
   return normalizeText(cleaned);
 }
 

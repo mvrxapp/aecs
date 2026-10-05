@@ -32,6 +32,8 @@ export interface NormalizedEmail {
   processing: {
     processedAt: string;
     specVersion: string;
+    /** True when cleanup would have emptied a non-empty body, so clean fell back to text (AECS-1 §4.3.1). */
+    cleanFallback?: boolean;
     attachmentErrors?: AttachmentError[];
   };
 }

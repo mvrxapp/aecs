@@ -1,0 +1,16 @@
+{
+  "description": "Outlook on the web: an underscore divider directly above a From:/Sent: header block starts unprefixed history, which MUST be removed.",
+  "specSection": "AECS-1 §4.3.1",
+  "input": {
+    "text": "Works for me.\n\n________________________________\nFrom: Alice Example <alice@example.com>\nSent: Monday, 29 June 2026 09:00\nSubject: Meeting\n\nDoes 3pm work?"
+  },
+  "expected": {
+    "nonEmpty": true,
+    "mustContain": [
+      "Works for me."
+    ],
+    "mustNotContain": [
+      "Does 3pm work?"
+    ]
+  }
+}

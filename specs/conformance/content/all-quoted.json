@@ -1,0 +1,14 @@
+{
+  "description": "The body is only a quotation, with no authored lines. Cleanup MUST NOT produce an empty clean view; it falls back to text.",
+  "specSection": "AECS-1 §4.3.1",
+  "input": {
+    "text": "> The server will be down for maintenance on Saturday from 02:00 to 04:00 UTC."
+  },
+  "expected": {
+    "nonEmpty": true,
+    "mustContain": [
+      "The server will be down for maintenance on Saturday from 02:00 to 04:00 UTC."
+    ],
+    "mustNotContain": []
+  }
+}

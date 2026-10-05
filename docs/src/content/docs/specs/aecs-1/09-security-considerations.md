@@ -8,7 +8,7 @@ This specification defines data structure only. It does not mandate sanitization
 **Implementers and consumers should note:**
 
 - All email content — including `subject`, sender names, and body fields at every level — originates from an untrusted external source.
-- The `forAI` field reduces noise but does not sanitize for prompt injection. An adversary can craft email content designed to manipulate an AI system that processes it as instructions.
+- The `forAI` field reduces noise but does not sanitize for prompt injection. Content that cleanup keeps for preservation ([§4.3.1](/aecs/specs/aecs-1/06-field-definitions/#431-content-preservation)), including quoted context and fallback bodies, is just as untrusted. An adversary can craft email content designed to manipulate an AI system that processes it as instructions.
 - Safe usage of any `content.*` field with an LLM is the responsibility of the consuming application.
 - Implementations are encouraged to offer an optional scanning layer and attach findings as metadata outside this core schema. This spec does not define that layer.
 - `content.rawFull` in particular MUST be treated as fully untrusted input if re-parsed downstream.

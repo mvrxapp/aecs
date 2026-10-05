@@ -1,11 +1,11 @@
 # AECS SDK Specification
 
 **Document:** AECS-SDK-1  
-**Version:** 0.3.0-draft  
+**Version:** 0.3.1-draft  
 **Status:** Draft  
-**Date:** 2026-07-03  
+**Date:** 2026-10-05  
 **Authors:** MVRX Group  
-**Implements:** [AECS-1 v1.0.0 (Final, 2026-07-03)](./AECS-1-ai-email-consumption.md)
+**Implements:** [AECS-1 v1.1.0 (Final, 2026-10-05)](./AECS-1-ai-email-consumption.md)
 
 ---
 
@@ -185,7 +185,7 @@ interface NormalizedEmail {
     raw:     string | null;      // body only, quoted history present
     html:    string | null;      // HTML part of latest content
     text:    string | null;      // plain text of latest content
-    clean:   string | null;      // quotes and signatures stripped
+    clean:   string | null;      // quotes and signatures stripped; authored lines always kept (AECS-1 §4.3.1)
     forAI:   string | null;      // LLM-optimised (see Section 4)
   };
 
@@ -199,7 +199,8 @@ interface NormalizedEmail {
 
   processing: {
     processedAt:      string;             // ISO 8601 UTC
-    specVersion:      string;
+    specVersion:      string;             // "1.1"
+    cleanFallback?:   boolean;            // true when clean fell back to text (AECS-1 §4.3.1 rule 6)
     attachmentErrors: AttachmentError[];  // non-fatal errors during onAttachment
   };
 }
@@ -516,10 +517,18 @@ rawFull  →  raw  →  text  →  clean  →  forAI
 | `raw` | Latest body only — headers removed, quoted history present, transfer encoding decoded. |
 | `html` | HTML part of latest content. `null` for plain-text messages. |
 | `text` | Plain text of latest content. Derived from `html` if no plain-text part. |
-| `clean` | `text` with quoted reply chains and email signatures removed. |
+| `clean` | `text` with quoted reply history and email signatures removed. Authored lines are never removed ([AECS-1 §4.3.1](/aecs/specs/aecs-1/06-field-definitions/#431-content-preservation)). |
 | `forAI` | `clean` with whitespace normalised, inline image references removed, forwarded headers collapsed, optional delimiters applied, truncated to `forAIMaxChars`. |
 
-The default cleaner detects quoted history using `>` prefix patterns, `On [date] wrote:` markers, `-----Original Message-----` delimiters, and heuristic signature detection (`-- ` RFC 3676 delimiter + trailing short-block patterns). When confidence is low, content is retained.
+The default cleaner follows the content-preservation rules in [AECS-1 §4.3.1](/aecs/specs/aecs-1/06-field-definitions/#431-content-preservation):
+
+- **Quoted lines** (`>` prefix) and **attribution lines** (`On [date] … wrote:`, including a version wrapped onto two lines) are removed only after the sender's last authored line. Bottom-posted and inline answers are kept.
+- **Context:** up to 3 quoted lines directly above each authored line are kept, so "No." keeps its question. Longer quotes are cut down, with a `> [N quoted lines omitted]` marker.
+- **Unprefixed history** starts at a `-----Original Message-----` separator, or a `From:` line followed by `Sent:`/`Date:`/`To:`/`Subject:`, and is removed to the end. An underscore divider counts only when such a header block follows it; a divider on its own is kept. A header block under a `Forwarded message` marker is forwarded content and is kept.
+- **Signatures:** the `-- ` delimiter, `Sent from my …`, confidentiality disclaimers and closing salutations are removed only as a short trailing block (at most 10, 2 and 14 non-empty lines after the marker respectively). Longer text after a lookalike marker is kept.
+- **Fallback:** if cleanup would leave nothing, `clean` is set to `text` and `processing.cleanFallback` is `true`.
+
+A custom `cleaner` receives the full `text`, quotes included, and replaces both quote and signature removal. The empty-result fallback still applies to its output.
 
 ```typescript
 // Replace the default cleaner
@@ -1274,6 +1283,8 @@ const response = await ai.run(model, [
 
 Always use `content.forAI` as LLM input. `rawFull` contains headers, MIME boundaries, base64 blobs, and prior quoted history that waste context and widen injection surface.
 
+`forAI` is still a lossy view. If your application acts on the body (classifying, routing, replying), keep `content.text` as a fallback and use it when `processing.cleanFallback` is `true` ([AECS-1 §4.3](/aecs/specs/aecs-1/06-field-definitions/#43-content)).
+
 ### 11.3 Bound Output Size
 
 ```typescript
@@ -1334,7 +1345,7 @@ way `forAIMaxChars` ([§11.3](/aecs/specs/aecs-sdk-1/11-security-best-practices/
 |---|---|---|---|
 | `maxBodyBytes` | `number` | `1_000_000` | Max bytes read from message body |
 | `forAIMaxChars` | `number` | `8_000` | Max chars in `content.forAI` |
-| `cleaner` | `fn` | built-in | Custom quote/signature stripper |
+| `cleaner` | `fn` | built-in | Custom quote/signature stripper. Receives the full `text`, quotes included |
 | `wrapper` | `ForAIWrapper` | none | Delimiter wrapper for `forAI` |
 | `onAttachment` | `fn` | none | Callback per attachment during parse |
 | `attachmentsInForAI` | `boolean` | `false` | Append `att.extractedText` to `content.forAI` *(roadmap — attachment processors, [§9.3](/aecs/specs/aecs-sdk-1/09-attachment-handling/#93-built-in-cf-processor--store-to-r2)–[9.8](/aecs/specs/aecs-sdk-1/09-attachment-handling/#98-async-extraction-large-files-via-queue); not in the current `ParseOptions` type)* |
@@ -1974,5 +1985,6 @@ The spec version implemented is declared in `package.json`:
 
 | Version | Date | Notes |
 |---|---|---|
+| 0.3.1-draft | 2026-10-05 | Synced to [AECS-1 v1.1.0](./AECS-1-ai-email-consumption.md) (content preservation). [§4](/aecs/specs/aecs-sdk-1/04-content-levels/) now describes the default cleaner accurately: authored lines after quotes are kept, quoted context is bounded, dividers are not quote boundaries, signature removal is size-limited, and an empty result falls back to `text`. Removed the incorrect claim that content is retained "when confidence is low". `processing.specVersion` is `"1.1"`; adds `processing.cleanFallback`. A custom `cleaner` now receives the full `text` instead of quote-stripped text. |
 | 0.3.0-draft | 2026-07-03 | Synced to [AECS-1 v1.0.0 (Final, 2026-07-03)](./AECS-1-ai-email-consumption.md). Added the Implementation Status note (near the top of this document) and `Status: Roadmap` banners on every section that specifies a module not yet implemented in `@mvrx/mail`, roadmap annotations on the [§2.2](/aecs/specs/aecs-sdk-1/02-installation-setup/#22-cloudflare-workers--full-setup) setup bindings and [§13](/aecs/specs/aecs-sdk-1/13-examples/)–[§14](/aecs/specs/aecs-sdk-1/14-extensibility/) examples/extensibility, plus a [§11](/aecs/specs/aecs-sdk-1/11-security-best-practices/) cross-reference to AECS-1 [§7](/aecs/specs/aecs-1/09-security-considerations/)'s security guidance. No normative algorithm text changed. |
 | 0.2.0-draft | 2026-06-29 | Prior draft, written before AECS-1 was finalized. |

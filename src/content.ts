@@ -53,22 +53,71 @@ export function normalizeText(text: string): string {
   return out.join("\n").trim();
 }
 
+/** Quoted lines kept, per quoted block, as context for the authored line that follows (AECS-1 §4.3.1). */
+const QUOTE_CONTEXT_LINES = 3;
+/** Largest trailing block, in non-empty lines, that signature rules may remove (AECS-1 §4.3.1). */
+const MAX_SIGNATURE_LINES = 10;
+const MAX_DISCLAIMER_LINES = 15;
+
+type LineKind = "authored" | "quoted" | "attribution" | "blank";
+
+/**
+ * Remove quoted reply history while keeping every authored line (AECS-1 §4.3.1).
+ *
+ * - Unprefixed history (an "Original Message" separator, or a From:/Sent: header block,
+ *   optionally under an underscore divider) is removed from its start to the end.
+ * - Quoted (`>`) lines and attribution lines after the last authored line are removed.
+ * - Authored lines below or between quotes (bottom-posted and inline replies) are kept,
+ *   with up to QUOTE_CONTEXT_LINES of the quote directly above each one as context.
+ * - A divider line on its own is never treated as the start of quoted history.
+ */
 export function stripQuotedChains(text: string): string {
-  const lines = normalizeText(text).split("\n");
-  const cut = lines.findIndex((line, index) => isQuoteStart(lines, index, line.trim()));
-  return normalizeText((cut >= 0 ? lines.slice(0, cut) : lines).join("\n"));
+  let lines = normalizeText(text).split("\n");
+  const history = lines.findIndex((_line, index) => isUnprefixedHistoryStart(lines, index));
+  if (history >= 0) lines = lines.slice(0, history);
+
+  const kinds = classifyLines(lines);
+  const lastAuthored = kinds.lastIndexOf("authored");
+  if (lastAuthored < 0) return "";
+
+  const out: string[] = [];
+  let quoted: string[] = [];
+  const flushQuoted = () => {
+    const kept = quoted.slice(-QUOTE_CONTEXT_LINES);
+    const omitted = quoted.length - kept.length;
+    if (omitted > 0) out.push(`> [${omitted} quoted line${omitted === 1 ? "" : "s"} omitted]`);
+    out.push(...kept);
+    quoted = [];
+  };
+
+  for (let i = 0; i <= lastAuthored; i++) {
+    const kind = kinds[i];
+    if (kind === "quoted") quoted.push(lines[i]);
+    else if (kind === "authored") {
+      flushQuoted();
+      out.push(lines[i]);
+    } else if (kind === "blank" && quoted.length === 0) out.push(lines[i]);
+  }
+  return normalizeText(out.join("\n"));
 }
 
+/**
+ * Remove a trailing signature block. Each rule only fires when the block it would remove
+ * is short, so authored text after a lookalike line is kept (AECS-1 §4.3.1).
+ */
 export function stripSignature(text: string): string {
   const normalized = normalizeText(text);
   const lines = normalized.split("\n");
+  const tailSize = (from: number) => lines.slice(from).filter((line) => line.trim()).length;
+  const cutAt = (index: number, max: number) => index > 0 && tailSize(index) <= max;
+
   const delimiter = lines.findIndex((line) => /^--\s*$/.test(line.trim()));
-  if (delimiter > 0) return normalizeText(lines.slice(0, delimiter).join("\n"));
+  if (cutAt(delimiter, MAX_SIGNATURE_LINES + 1)) return normalizeText(lines.slice(0, delimiter).join("\n"));
 
   const mobile = lines.findIndex((line) =>
     /^Sent from my (iPhone|iPad|Android|Pixel|Samsung|mobile device)\b/i.test(line.trim()),
   );
-  if (mobile > 0) return normalizeText(lines.slice(0, mobile).join("\n"));
+  if (cutAt(mobile, 3)) return normalizeText(lines.slice(0, mobile).join("\n"));
 
   const disclaimer = lines.findIndex(
     (line, index) =>
@@ -77,7 +126,7 @@ export function stripSignature(text: string): string {
         line.trim(),
       ),
   );
-  if (disclaimer > 0) return normalizeText(lines.slice(0, disclaimer).join("\n"));
+  if (cutAt(disclaimer, MAX_DISCLAIMER_LINES)) return normalizeText(lines.slice(0, disclaimer).join("\n"));
 
   for (let i = Math.max(1, lines.length - 4); i < lines.length; i++) {
     const line = lines[i]?.trim() ?? "";
@@ -118,19 +167,59 @@ export function makeForAI(
   return out;
 }
 
-function isQuoteStart(lines: string[], index: number, line: string): boolean {
-  if (!line) return false;
-  if (line.startsWith(">")) return true;
-  if (/^On .+wrote:$/i.test(line)) return true;
-  if (/^-{2,}\s*Original Message\s*-{2,}$/i.test(line)) return true;
-  if (/^_{5,}$/.test(line)) return true;
-  if (!/^From:\s+\S+/i.test(line)) return false;
+function classifyLines(lines: string[]): LineKind[] {
+  return lines.map((line, index) => {
+    const trimmed = line.trim();
+    if (!trimmed) return "blank";
+    if (trimmed.startsWith(">")) return "quoted";
+    if (isAttribution(lines, index)) return "attribution";
+    if (index > 0 && /wrote:$/i.test(trimmed) && isAttribution(lines, index - 1)) return "attribution";
+    return "authored";
+  });
+}
 
-  const next = lines
+/** "On <date>, <name> wrote:" — on one line, or wrapped onto a second line ending "wrote:". */
+function isAttribution(lines: string[], index: number): boolean {
+  const line = lines[index]?.trim() ?? "";
+  if (/^On\b.+wrote:$/i.test(line)) return true;
+  if (!/^On\b.+/i.test(line)) return false;
+  const next = lines[index + 1]?.trim() ?? "";
+  if (!/wrote:$/i.test(next) || next.length > 80) return false;
+  const after = lines[index + 2]?.trim() ?? "";
+  return after === "" || after.startsWith(">");
+}
+
+function isUnprefixedHistoryStart(lines: string[], index: number): boolean {
+  const line = lines[index]?.trim() ?? "";
+  if (/^-{2,}\s*Original Message\s*-{2,}$/i.test(line)) return true;
+  if (/^_{5,}$/.test(line)) return isHeaderBlock(lines, nextNonEmpty(lines, index));
+  // A header block under a forwarded-message marker introduces forwarded content, which is kept.
+  return isHeaderBlock(lines, index) && !isForwardMarker(lines[previousNonEmpty(lines, index)]);
+}
+
+function isForwardMarker(line: string | undefined): boolean {
+  const trimmed = line?.trim() ?? "";
+  return /^[-_]{2,}\s*Forwarded message\s*[-_]{2,}$/i.test(trimmed) || /^Begin forwarded message:$/i.test(trimmed);
+}
+
+function previousNonEmpty(lines: string[], index: number): number {
+  for (let i = index - 1; i >= 0; i--) if (lines[i]?.trim()) return i;
+  return -1;
+}
+
+/** A "From: …" line followed within five lines by Sent:/Date:/To:/Subject: — a pasted reply or forward header. */
+function isHeaderBlock(lines: string[], index: number): boolean {
+  if (index < 0 || !/^From:\s+\S+/i.test(lines[index]?.trim() ?? "")) return false;
+  return lines
     .slice(index + 1, index + 6)
     .map((candidate) => candidate.trim())
-    .filter(Boolean);
-  return next.some((candidate) => /^(Sent|Date|To|Subject):\s+/i.test(candidate));
+    .filter(Boolean)
+    .some((candidate) => /^(Sent|Date|To|Subject):\s+/i.test(candidate));
+}
+
+function nextNonEmpty(lines: string[], index: number): number {
+  for (let i = index + 1; i < lines.length; i++) if (lines[i]?.trim()) return i;
+  return -1;
 }
 
 function decodeHtmlEntities(text: string): string {

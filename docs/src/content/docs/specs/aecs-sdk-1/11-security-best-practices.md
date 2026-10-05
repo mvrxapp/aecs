@@ -32,6 +32,8 @@ const response = await ai.run(model, [
 
 Always use `content.forAI` as LLM input. `rawFull` contains headers, MIME boundaries, base64 blobs, and prior quoted history that waste context and widen injection surface.
 
+`forAI` is still a lossy view. If your application acts on the body (classifying, routing, replying), keep `content.text` as a fallback and use it when `processing.cleanFallback` is `true` ([AECS-1 §4.3](/aecs/specs/aecs-1/06-field-definitions/#43-content)).
+
 ### 11.3 Bound Output Size
 
 ```typescript

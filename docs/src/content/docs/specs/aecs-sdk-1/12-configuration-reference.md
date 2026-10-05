@@ -9,7 +9,7 @@ title: "12. Configuration Reference"
 |---|---|---|---|
 | `maxBodyBytes` | `number` | `1_000_000` | Max bytes read from message body |
 | `forAIMaxChars` | `number` | `8_000` | Max chars in `content.forAI` |
-| `cleaner` | `fn` | built-in | Custom quote/signature stripper |
+| `cleaner` | `fn` | built-in | Custom quote/signature stripper. Receives the full `text`, quotes included |
 | `wrapper` | `ForAIWrapper` | none | Delimiter wrapper for `forAI` |
 | `onAttachment` | `fn` | none | Callback per attachment during parse |
 | `attachmentsInForAI` | `boolean` | `false` | Append `att.extractedText` to `content.forAI` *(roadmap — attachment processors, [§9.3](/aecs/specs/aecs-sdk-1/09-attachment-handling/#93-built-in-cf-processor--store-to-r2)–[9.8](/aecs/specs/aecs-sdk-1/09-attachment-handling/#98-async-extraction-large-files-via-queue); not in the current `ParseOptions` type)* |

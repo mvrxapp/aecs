@@ -1,0 +1,14 @@
+{
+  "description": "The body starts with a quoted line, followed by a one-word answer. The cleaned view MUST NOT be empty and MUST keep the answer.",
+  "specSection": "AECS-1 §4.3.1",
+  "input": {
+    "text": "> Is the invoice approved?\nNo."
+  },
+  "expected": {
+    "nonEmpty": true,
+    "mustContain": [
+      "No."
+    ],
+    "mustNotContain": []
+  }
+}

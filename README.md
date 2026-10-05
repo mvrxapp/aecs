@@ -9,7 +9,8 @@
 
 **AECS-1** (AI Email Consumption Specification) is an open standard for deterministically
 normalizing raw RFC 5322/MIME email into AI-ready JSON — the schema, the threading
-algorithm, and the six content levels. It is published under **CC0 1.0** (public domain):
+algorithm, the six content levels, and the rules for cleaning them without losing the
+sender's words. It is published under **CC0 1.0** (public domain):
 implement it in any language, without asking permission.
 
 `@mvrx/aecs` is the framework-agnostic, zero-infrastructure-dependency MIT reference
@@ -21,6 +22,7 @@ normalization, with no Cloudflare or storage assumptions baked in.
 - [JSON Schema](./specs/schema/normalized-email.schema.json) — machine-checkable `NormalizedEmail` shape
 - [Conformance suite](./specs/conformance/) — fixtures + an independent checker (`verify.py`)
 - [Docs site](https://mvrxapp.github.io/aecs/) — browsable version of the above
+- [Changelog](./CHANGELOG.md) — what changed in each release
 
 ## Install
 
@@ -43,6 +45,19 @@ console.log(email.content.forAI);   // wrapped, AI-ready representation
 
 `parse()` accepts a raw message as a `string`, `ArrayBuffer`, `Uint8Array`, or a
 `ReadableStream<Uint8Array>`.
+
+### Content levels and cleanup
+
+| Field | What it holds |
+|---|---|
+| `content.raw` / `content.text` | The full body, quoted history included |
+| `content.clean` | Quoted history and signatures removed. The sender's own lines are always kept, including answers written below or between quotes |
+| `content.forAI` | `clean`, normalised and bounded for an LLM |
+
+Cleanup follows [AECS-1 §4.3.1](./specs/AECS-1-ai-email-consumption.md#431-content-preservation).
+If it would leave nothing, `clean` falls back to `text` and `processing.cleanFallback`
+is `true`. `forAI` is still a lossy view: if your app acts on the body, keep
+`content.text` as a fallback.
 
 ## License
 
